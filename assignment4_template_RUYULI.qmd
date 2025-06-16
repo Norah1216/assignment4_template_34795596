@@ -1,0 +1,257 @@
+---
+title: "What is your blogpost title? Add it here??"
+subtitle: "Assignment 4 ETC5512"
+author: "RUYU LI"
+format: html
+editor: visual
+---
+
+::: panel-tabset
+<!-- Task 1 Tab: Data and Documenting -->
+
+## Data Details
+
+#### Topic of this work
+
+#### Data description
+
+**Datasets:**
+
+#### Data download
+
+```{r setup, include=FALSE}
+#install.packages("giscoR")
+library(giscoR)
+library(dplyr)
+library(readODS)
+library(ggplot2)
+library(tidyverse)
+library(stringr)
+library(janitor)
+library(sf)
+
+```
+
+
+```{r}
+life_satisfaction_clean <- read_ods("data/datadownload.ods", sheet = "61", skip = 5) %>%
+  clean_names() %>%
+  rename(
+    value = value_score_out_of_10
+  ) %>%
+  replace_na(list(
+    area_name = "Unknown",        
+    value     = 0
+  )) 
+```
+
+```{r}
+uk_nuts1 <- gisco_get_nuts(nuts_level = 1, resolution = "03") %>%    #nuts_level = 1选地区等级取
+  filter(CNTR_CODE == "UK")
+
+uk_nuts1 <- uk_nuts1 %>%
+  mutate(nation = case_when(
+    grepl("^UKM", NUTS_ID) ~ "Scotland",
+    grepl("^UKN", NUTS_ID) ~ "Northern Ireland",
+    grepl("^UKL", NUTS_ID) ~ "Wales",  # UKL includes Wales
+    TRUE ~ "England"
+  )) %>% 
+  mutate(NUTS_NAME = str_remove_all(NUTS_NAME, " \\(ENGLAND\\)"))
+
+map_life <- life_satisfaction_clean %>% 
+  filter(period == "2020-2021") %>% 
+  mutate(`area_name` = toupper(`area_name`)) %>% 
+  filter( `area_name` %in% uk_nuts1$NUTS_NAME) %>% 
+  left_join(uk_nuts1, by = c("area_name" = "NUTS_NAME")) %>% 
+  mutate(centroid = st_centroid(geometry)) %>% 
+  mutate(
+    x = st_coordinates(centroid)[, 1],
+    y = st_coordinates(centroid)[, 2]
+  ) %>% 
+  mutate(NAME_LATN = str_remove_all(NAME_LATN, " \\(ENGLAND\\)"))
+
+
+ggplot(map_life)+
+geom_sf(aes(fill=`value`,geometry = geometry), color = "white")+geom_text(aes(x = x, y = y,label = nation), size=3, fontface ="bold", color ="black") + scale_fill_gradient(low="yellow",high ="red",na.value = NA)+ylim(NA,59)+labs(title ="United Kingdom: 4 Nations",fill="Nation") + theme_void()
+```
+
+```{r message=FALSE, warning=FALSE}
+life_satisfaction_clean2 <-
+life_satisfaction_clean %>%
+  filter(
+    area_name %in% c("England", "Scotland", "Wales", "Northern Ireland"), 
+    between(as.integer(str_sub(period, 1, 4)), 2017, 2023)
+  ) %>%
+  separate(period, into = c("year_start", "year_end"), sep = "-") %>%
+  mutate(year_start = as.integer(year_start))
+
+ggplot(life_satisfaction_clean2, aes(x = year_start, y = value)) +
+  geom_line(size = 1, color = "#2C3E50") +
+  geom_point(size = 2, color = "#E74C3C") +
+  facet_wrap(~ area_name, ncol = 2) +
+  scale_x_continuous(breaks = 2017:2023) +
+  labs(
+    x     = "Start Year",
+    y     = "Life Satisfaction (0–10)",
+    title = "Life Satisfaction Trends by UK Nation, 2017–2023"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    strip.text      = element_text(face = "bold", size = 12),
+    axis.text.x     = element_text(angle = 45, hjust = 1),
+    plot.title      = element_text(face = "bold", size = 14, hjust = 0.5)
+  )
+```
+
+```{r}
+unemp_clean <- read_ods(
+    "data/datadownload.ods",
+    sheet = "5",   # Table 5: Modelled unemployment rate
+    skip  = 5
+  ) %>%
+  clean_names() %>%  
+  rename(
+    value    = value_percent
+  ) %>% filter(
+    between(
+      as.integer(str_sub(period, 1, 4)),  
+      2017, 2023
+    )
+  ) %>%
+  mutate(
+    start_date = str_extract(period, "^[^/]+") %>% as_date(),
+    year_start = year(start_date),
+    year_end   = year_start + 1
+  ) %>%
+  select(
+    area_code,
+    area_name,
+    year_start,
+    year_end,
+    value)
+
+```
+
+```{r}
+line_unemp_clean <-unemp_clean %>%
+  filter(
+    area_name %in% c("England", "Scotland", "Wales", "Northern Ireland"))
+ggplot(line_unemp_clean, aes(
+    x = year_start, 
+    y = value, 
+    color = area_name, 
+    group = area_name
+  )) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  scale_x_continuous(breaks = 2017:2023) +
+  labs(
+    x     = "Start Year",
+    y     = "Modelled Unemployment Rate (%)",
+    color = "Nation",
+    title = "Modelled Unemployment Rate by UK Nation, 2017–2023"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title    = element_text(face = "bold", size = 14, hjust = 0.5),
+    axis.text.x   = element_text(angle = 45, hjust = 1, vjust = 1),
+    legend.position = "bottom"
+  ) 
+```
+
+```{r}
+uk_nuts1 <- gisco_get_nuts(nuts_level = 1, resolution = "03") %>%    #nuts_level = 1选地区等级取
+  filter(CNTR_CODE == "UK")
+
+uk_nuts1 <- uk_nuts1 %>%
+  mutate(nation = case_when(
+    grepl("^UKM", NUTS_ID) ~ "Scotland",
+    grepl("^UKN", NUTS_ID) ~ "Northern Ireland",
+    grepl("^UKL", NUTS_ID) ~ "Wales",  # UKL includes Wales
+    TRUE ~ "England"
+  )) %>% 
+  mutate(NUTS_NAME = str_remove_all(NUTS_NAME, " \\(ENGLAND\\)"))
+
+map_unemp_clean <- unemp_clean %>% 
+  filter(year_start == "2020") %>% 
+  mutate(`area_name` = toupper(`area_name`)) %>% 
+  filter( `area_name` %in% uk_nuts1$NUTS_NAME) %>% 
+  left_join(uk_nuts1, by = c("area_name" = "NUTS_NAME")) %>% 
+  mutate(centroid = st_centroid(geometry)) %>% 
+  mutate(
+    x = st_coordinates(centroid)[, 1],
+    y = st_coordinates(centroid)[, 2]
+  ) %>% 
+  mutate(NAME_LATN = str_remove_all(NAME_LATN, " \\(ENGLAND\\)"))
+
+
+ggplot(map_unemp_clean)+
+geom_sf(aes(fill=`value`,geometry = geometry), color = "white")+geom_text(aes(x = x, y = y,label = nation), size=3, fontface ="bold", color ="black") + scale_fill_gradient(low="yellow",high ="red",na.value = NA)+ylim(NA,59)+labs(title ="United Kingdom: 4 Nations",fill="Nation") + theme_void()
+```
+
+
+business death rate
+```{r}
+business_deaths <- 
+  read_ods("data/datadownload.ods", sheet = "19", skip = 5) %>%
+  clean_names() %>%               
+  filter(area_name == "United Kingdom") %>% 
+  mutate(
+    year = as.integer(period)     
+  ) %>%
+  select(
+    year,
+    business_deaths_pct = value_percent
+  )
+```
+
+
+
+```{r}
+ggplot(business_deaths, aes(x = year, y = business_deaths_pct)) +
+  geom_line() +
+  geom_point() +
+  scale_x_continuous(breaks = 2017:2023) +
+  labs(
+    x     = "Year",
+    y     = "Business Death Rate (%)",
+    title = "UK Business Death Rate, 2017–2023"
+  ) +
+  theme_minimal()
+```
+
+### Remember
+
+Contains public sector information licensed under the Open Government Licence v3.0. © Crown copyright 2017-2022, Office for National Statistics.
+
+<a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/"><img src="/ogl-symbol-41px-retina-black.png" alt="Open Government Licence logo"/></a>
+
+<!-- Task 2 Tab: Writing your blogpost -->
+
+## Blog post
+
+### What's in this section
+
+Here is where you should write your blogpost! (Task 2)
+
+### Blogpost Structure
+
+There is no strict structure for you to follow. However, here is a skeleton structure you may find helpful.
+
+1.  Title (is set at the top of this document)
+2.  Motivation\
+3.  Data\
+4.  Analysis\
+5.  Conclusions\
+6.  References
+
+<!-- Task 3 Tab: Behind the Scenes -  -->
+
+## Behind the Scenes
+
+### What's in this section
+
+Here is where you should tell us about your reflection on your analysis (Task 3).
+
+Again, these are the details about **your** perspective and the gritty details behind the scenes of your analysis.
+:::

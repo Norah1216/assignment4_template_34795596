@@ -1,0 +1,944 @@
+---
+output: html_document
+---
+
+# European election: More extreme voting in Europe and Germany? {.tabset}
+
+Prepared by Student (Monash-ID: XXXXXXX)
+
+Assignment 4 ETC5512
+
+Due date: 2024-05-31
+
+<!-- ---------------------------------------------------------------------- -->
+
+<!-- Data Details -->
+
+<!-- ---------------------------------------------------------------------- -->
+
+## Data Details
+
+#### Topic of this work
+
+What shift in 'extreme' voting is detectable at the European level when comparing the 2019 and 2014 european elections, and can the same shift be observed at the German level?
+
+#### Data description
+
+I used the datasets described below to analyze the shifts in extreme voting patterns at both the European and German levels, as discussed in this blog post. For more details, like license information, on the wrangled subset data that is later used for analysis, refer to the READEM.txt and the data-dictionary.csv. For full citations, please refer to the References in the Blog Post Tab.
+
+**Datasets:**
+
+1.  **EP Election Results at Constituency Level (1979-2019):**
+
+    -   Source: European University Institute (EUI)
+
+    -   Content: Results of European Parliament elections at the constituency level for all Member States since the first direct elections in 1979.
+
+    -   Last Updated: 2023
+
+    -   Data Type: Census
+
+    -   Limitations: May not capture all local nuances.
+
+    -   Privacy/Ethics: Aggregated data, minimizing privacy concerns. No direct identifiers.
+
+2.  **Endgültige Ergebnisse nach kreisfreien Städten und Landkreisen aller Europawahlen (1979 - 2019):**
+
+    -   Source: Federal Returning Officer
+
+    -   Content: Detailed data on European election results by independent cities and districts in Germany.
+
+    -   Last Updated: 2020
+
+    -   Data Type: Census
+
+    -   Limitations: Data is detailed only to the regional level.
+
+    -   Privacy/Ethics: Aggregated data, ensuring privacy. No direct identifiers.
+
+3.  **eurostat R Package:**
+
+    -   Source: Geographic Information System of the Commission (GISCO)
+
+    -   Content: Tools for accessing and manipulating Eurostat data in R.
+
+    -   Last Updated: December 2023
+
+    -   Data Type: Open data, various types
+
+    -   Limitations: Dependent on the accuracy of Eurostat data.
+
+    -   Privacy/Ethics: Data is publicly available and not of risk regarding privacy.
+
+4.  **GADM maps and data**
+
+    -   Source: Global Administrative Areas (GADM) Org
+
+    -   Content: GADM provides maps and spatial data for all countries and their sub-divisions.
+
+    -   Last Updated: December 2023
+
+    -   Data Type: Open data, various types
+
+    -   Limitations: Dependent on the accuracy of GDAM.
+
+    -   Privacy/Ethics: Data is publicly available and not of risk regarding privacy.
+
+5.  **The PopuList 3.0:**
+
+    -   Source: Various academics / The PopuList
+
+    -   Content: List of European parties from 31 countries classified as populist, far left, and/or far right, including their Euroscepticism.
+
+    -   Last Updated: 2023
+
+    -   Data Type: Survey
+
+    -   Limitations: Classification may be subjective.
+
+    -   Privacy/Ethics: Peer-reviewed, ensuring data integrity. No privacy risk.
+
+#### Data download
+
+The following section describes how the data can be downloaded from its original sources and what initial data wrangling steps have been taken.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      messages = FALSE, 
+                      warning = FALSE,
+                      eval = FALSE)
+
+# Un-Comment if not installed
+#install.packages("tidyverse")
+#install.packages("here")
+#install.packages("dplyr")
+#install.packages("eurostat")
+#install.packages("giscoR")
+#install.packages("sf")
+#install.packages("patchwork")
+
+library(tidyverse)
+library(here)
+library(eurostat)
+library(readxl)
+library(giscoR)
+library(sf)
+library(patchwork)
+
+# Suppress startup messages when loading dplyr
+suppressPackageStartupMessages(library(dplyr))
+
+# Set global options to suppress dplyr messages
+options(dplyr.summarise.inform = FALSE)
+options(dplyr.groups_inform = FALSE)
+```
+
+**Downloading Dataset 1**
+
+```{r}
+# Pull data
+url = "https://cadmus.eui.eu/bitstream/handle/1814/75475/Dataset%20EP%20Elections%20at%20Constituency%20Level%2c%201979-2019_Caramani.xlsx?sequence=1&isAllowed=y"
+# If url is not reachable anymore, try the following:
+# 1. Visit https://hdl.handle.net/1814/75475
+# 2. Manually trigger download of the open dataset at the bottom of the page and save it to your R environment as "election_data_european_level.xlsx".
+
+# Copy file to temp buffer
+tempfile <- tempfile(fileext = ".xlsx")
+download.file(url, tempfile, mode = "wb")
+election_data_european_level <- read_excel(tempfile)
+
+# Filter for last two European elections (i.e. 2014 and 2019)
+election_data_european_level_2014_2019 <- election_data_european_level %>%
+  filter(year == 2014 | year == 2019)
+
+# Save data to .csv
+write_csv(election_data_european_level_2014_2019, here::here("data/election_data_european_level.csv"))
+```
+
+**Downloading Dataset 2**
+
+```{r}
+url = "https://www.bundeswahlleiterin.de/dam/jcr/41fa4c86-f716-46b9-9e6e-8f9402110557/ew_kerg.zip"
+# If url is not reachable anymore, try the following:
+# 1. Visit https://www.bundeswahlleiterin.de/europawahlen/2019/publikationen.html
+# 2. Manually trigger download of the zip-File "Tabellen: Endgültige Ergebnisse nach kreisfreien Städten und Landkreisen aller Europawahlen (1979 - 2019)" at the bottom of the page under "ALLE EUROPAWAHLEN" and save it to your R environment as "election_data_german_level.zip".
+
+# Pull data
+destfile <- here::here("rawData/election_data_german_level.zip")
+download.file(url, destfile, mode = "wb")
+
+# Define the directory to unzip the file and unzip
+unzip_dir <- here::here("rawData/election_data_german_level")
+# Create the directory if it does not exist
+if (!dir.exists(unzip_dir)) {
+  dir.create(unzip_dir)
+}
+unzip(destfile, exdir = unzip_dir)
+
+# Read files of interest (namely for 2014 and 2019) with right enconding
+
+# 2014
+election_data_german_level_2014 <- read_delim(
+  here::here("rawData/election_data_german_level/ew2014_kerg.csv"), 
+  delim = ";", 
+  skip = 5, 
+  locale = locale(encoding = "windows-1252")
+)
+
+# 2019
+election_data_german_level_2019 <- read_delim(
+  here::here("rawData/election_data_german_level/ew2019_kerg.csv"), 
+  delim = ";", 
+  skip = 2, 
+  locale = locale(encoding = "UTF-8")
+)
+```
+
+```{r}
+# Wrangle 2014 german data
+
+# Drop "gehört" column as redudant information to first column. Drop last three columns ("others") because of many NA values and not relevant.
+election_data_german_level_2014 <- election_data_german_level_2014 %>%
+  select(-all_of(c(3,61,62,63)))
+
+# Drop every second column (starting from 4th), as these represent not relevant respective values for previous european election
+total_cols <- ncol(election_data_german_level_2014)
+cols_to_drop <- seq(4, total_cols, by = 2)
+election_data_german_level_2014 <- election_data_german_level_2014 %>% select(-all_of(cols_to_drop))
+
+# Drop row(s) where Nr equals "NA". Due to intial .csv formatting and hence not relevant.
+election_data_german_level_2014 <- election_data_german_level_2014 %>%
+  filter(!is.na(Nr))
+
+# Manually rename columns. Translate from german to english and use helpful name.
+column_headers <- c("area_no", "area", "eligible_voters", "received_votes", "invalid_votes", "valid_votes", "CDU", "SPD", "Grüne", "FDP", "Die Linke", "CSU", "Freie Wähler", "REP", "Tierschutzpartei", "Familie", "Piraten", "ÖDP", "PBC", "Volksabstimmung", "BP", "CM", "AUF", "DKP", "BüSo", "PSG", "AFD", "PRO NRW", "MLPD", "NPD", "Die Partei")
+
+election_data_german_level_2014 <- election_data_german_level_2014 %>% set_names(column_headers)
+
+# Transform from wide to long (similar to election_data_european_level)
+election_data_german_level_2014_long <- election_data_german_level_2014 %>%
+  pivot_longer(
+    cols = starts_with("CDU"):last_col(),  # Adjust the range to include all party columns (starts with CDU)
+    names_to = "party",
+    values_to = "votes"
+  )
+```
+
+```{r}
+# Wrangle 2019 german data
+
+# Drop "gehört" column as redudant information to first column. Drop last three columns ("others") because not relevant and many NAs.
+election_data_german_level_2019 <- election_data_german_level_2019 %>%
+  select(-all_of(c(3,94,95,96)))
+
+# Drop every second column (starting from 4th), as these represent not relevant respective values for previous european election
+total_cols <- ncol(election_data_german_level_2019)
+cols_to_drop <- seq(4, total_cols, by = 2)
+election_data_german_level_2019 <- election_data_german_level_2019 %>% select(-all_of(cols_to_drop))
+
+# Drop row(s) where Nr equals "NA". Due to intial .csv formatting and hence not relevant.
+election_data_german_level_2019 <- election_data_german_level_2019 %>%
+  filter(!is.na(Nr))
+
+# Manually rename columns. Translate from german to english and use helpful name.
+column_headers <- c("area_no", "area", "eligible_voters", "received_votes", "invalid_votes", "valid_votes", "CDU", "SPD", "Grüne","Die Linke", "AfD", "CSU", "FDP", "Freie Wähler", "Piraten", "PARTEI MENSCH UMWELT TIERSCHUTZ", "NPD", "Familie", "ÖDP", "Die Partei", "Volksabstimmung", "BP", "DKP", "MLPD", "SGP", "Tierschutzpartei", "Tierschutzallianz", "Bündnis C", "Bündnis für Innovation & Gerechtigkeit", "Bündnis Grundeinkommen", "Demokratie DIREKT!", "Demokratie in Europa - DiEM25","DER DRITTE WEG","Die Grauen – Für alle Generationen","DIE RECHTE – Partei für Volksabstimmung, Souveränität und Heimatschutz","Die Violetten","Europäische Partei LIEBE","Feministische Partei DIE FRAUEN","Graue Panther","LKR - Bernd Lucke und die Liberal-Konservativen Reformer","Menschliche Welt - für das Wohl und Glücklichsein aller","Neue Liberale – Die Sozialliberalen","Ökologische Linke","Partei der Humanisten","PARTEI FÜR DIE TIERE DEUTSCHLAND","Partei für Gesundheitsforschung", "Volt Deutschland")
+
+election_data_german_level_2019 <- election_data_german_level_2019 %>% set_names(column_headers)
+
+# Transform from wide to long (similar to election_data_european_level)
+election_data_german_level_2019_long <- election_data_german_level_2019 %>%
+  pivot_longer(
+    cols = starts_with("CDU"):last_col(),  # Adjust the range to include all party columns (starts with CDU)
+    names_to = "party",
+    values_to = "votes"
+  )
+# Clear project before continuing
+rm(list = ls())
+```
+
+```{r}
+# Add a year column to each dataframe
+election_data_german_level_2014_long <- election_data_german_level_2014_long %>%
+  mutate(year = 2014)
+
+election_data_german_level_2019_long <- election_data_german_level_2019_long %>%
+  mutate(year = 2019)
+
+# Make sure data type of all column matches before binding them together
+election_data_german_level_2014_long <- election_data_german_level_2014_long %>%
+  mutate(
+    area_no = as.integer(area_no),
+    area = as.character(area),
+    eligible_voters = as.integer(eligible_voters),
+    received_votes = as.integer(received_votes),
+    invalid_votes = as.integer(invalid_votes),
+    valid_votes = as.integer(valid_votes),
+    party = as.character(party),
+    votes = as.integer(votes),
+    year = as.integer(year)
+  )
+
+election_data_german_level_2019_long <- election_data_german_level_2019_long %>%
+  mutate(
+    area_no = as.integer(area_no),
+    area = as.character(area),
+    eligible_voters = as.integer(eligible_voters),
+    received_votes = as.integer(received_votes),
+    invalid_votes = as.integer(invalid_votes),
+    valid_votes = as.integer(valid_votes),
+    party = as.character(party),
+    votes = as.integer(votes),
+    year = as.integer(year)
+  )
+
+# Combine 2014 and 2019 data and write to .csv
+election_data_german_level_2014_2019 <- bind_rows(election_data_german_level_2014_long, election_data_german_level_2019_long)
+# Save data to .csv
+write_csv(election_data_german_level_2014_2019, here::here("data/election_data_german_level.csv"))
+
+# Clear project before continuing
+rm(list = ls())
+```
+
+**Downloading Dataset 3 & 4**
+
+```{r, eval=TRUE}
+# Get european country borders on highes level (nuts = 0)
+SHP_0 <- get_eurostat_geospatial(resolution = 10, nuts_level = 0, year = 2016)
+
+# Filter for countries that are part of the EU, exclude UK because of BREXIT
+EU27 <- eu_countries %>% 
+  filter(code != 'UK') %>% 
+  select(geo = code, name)
+
+# Join shape file with EU27 countries to only have map for EU27 on nuts 0 level
+SHP_27 <- SHP_0 %>% 
+  select(geo = NUTS_ID, geometry) %>% 
+  inner_join(EU27, by = "geo") %>% 
+  arrange(geo) %>% 
+  st_as_sf()
+
+# Set a longer timeout for download.file
+options(timeout = 600) # 600 seconds (10 minutes)
+
+# Get german SHP file
+url = "https://geodata.ucdavis.edu/gadm/gadm4.1/shp/gadm41_DEU_shp.zip"
+# If url is not reachable anymore, try the following:
+# 1. Visit https://gadm.org/download_country.html and select Germany
+# 2. Manually trigger download of the zip-File and save it to your R environment as "geo_data_germany.zip".
+
+# Pull data
+destfile <- here::here("rawData/geo_data_germany.zip")
+download.file(url, destfile, mode = "wb")
+
+# Define the directory to unzip the file and unzip
+unzip_dir <- here::here("rawData/geo_data_germany")
+# Create the directory if it does not exist
+if (!dir.exists(unzip_dir)) {
+  dir.create(unzip_dir)
+}
+unzip(destfile, exdir = unzip_dir)
+
+# Define the path to the SHP file
+shp_file_path <- here::here("rawData/geo_data_germany/gadm41_DEU_1.shp")
+
+# Read the SHP file
+SHP_GER <- st_read(shp_file_path)
+```
+
+**Downloading Dataset 5**
+
+```{r}
+# Pull data
+url = "https://osf.io/download/7krzm/"
+# If url is not reachable anymore, try the following:
+# 1. Visit https://doi.org/10.17605/OSF.IO/2EWKQ
+# 2. Manually trigger download of the open dataset at the top of the page and save it to your R environment as "ThePopuList_3.csv".
+
+# Copy file to temp buffer
+popu_list_3 <- read_delim(url, delim = ";")
+
+write_csv(popu_list_3, here::here("data/ThePopuList_3.csv"))
+```
+
+<!-- ---------------------------------------------------------------------- -->
+
+<!-- Blog post -->
+
+<!-- ---------------------------------------------------------------------- -->
+
+## Blog post
+
+### Why take a look at European voting data?
+
+European elections are a hot topic at home. Friends in Europe and also some that I've met during this exchange express concern about the changing tone of politics and voter behavior in their countries, with extreme parties gaining popularity. For example, just recently, a video from a high-society club on the German island of Sylt showed young people singing racist songs and imitating Third Reich symbols, sparking a huge discussion about racism and anti-democratic behavior in Germany (see [this](https://www.theguardian.com/world/article/2024/may/24/outrage-at-footage-of-people-singing-nazi-slogan-at-party-on-german-island) Guardian article for more).
+
+Given the upcoming European elections (6th to 9th June 2024) and the events in Germany, I aimed to visualize the results of the two previus european elections in Europe and Germany using my newly acquired Open Data skills. Doing that, I am hoping to have a fact based view on how people really vote. Is there really a general trend towards more extreme parties? And is this trend the same everywhere?
+
+### Data Sources for Analyzing Extreme Party Votes in Europe
+
+Data for visualizing European election turnouts (both at the European and German levels) is accessible to everyone through official electoral commissions or open academic databases that have aggregated data from various sources. For more information on the data that was used here, please refer to the Data Details and Reference section.
+
+As with any analysis, the underlying assumptions are critical. Definitions of "extreme" parties vary. For this project, I will use PopuList's definition. They classify parties in 31 European countries as extreme if they are populist, far-left, far-right, or eurosceptic, based on the expertise of 100 academics across Europe. To keep the analysis manageable, I focused on the currently more prevalent far-right.
+
+Merging european election results with PopuList's classification allows me to present the data depicted in the next section. All votes for far-right parties are considered, including those that did not meet the national threshold (usually around 5%) to gain seats in the European Parliament.
+
+### What does the data tell us?
+
+Looking at the data at a European level, the 2019 European Elections show a varied share of votes for far-right parties across different European countries (see map underneath).
+
+```{r, eval=TRUE, echo=FALSE}
+# Read in PopuList
+the_popuList_3 <- read_csv(here::here("data/ThePopuList_3.csv"),show_col_types = FALSE)
+
+# Analysis will only focus on far-right parties. Filter for these.
+the_popuList_3_farRight <- the_popuList_3 %>%
+  filter(farright == 1 | farright_bl == 1)
+```
+
+```{r, eval=TRUE, echo=FALSE}
+election_data_european_level_noFlag <- read_csv(here::here("data/election_data_european_level.csv"),show_col_types = FALSE)
+
+# Map current party name in election_data_european to correct convention from popList_3_farRight.
+party_mappings <- c(
+  "IMRO-Bulgarian National Movement" = "Bulgarian National Movement",
+  "Bridge of independents" = "Bridge",
+  "Democratic Rally–European Party" = "European Party",
+  "Dawn of Direct Democracy" = "Dawn",
+  "The Danish Peoples Party" = "Danish People's Party",
+  "Conservative people's party of estonia" = "Conservative People’s Party of Estonia",
+  "National Front" = "National Front / Rally",
+  "Greek solution" = "Greek Solution",
+  "Popular orthodox rally" = "Popular Orthodox Rally",
+  "Fidesz–KDNP" = "Fidesz",
+  "Northern League" = "(Northern) League",
+  "National Alliance \"All For Latvia!\" – \"For Fatherland and Freedom/LNNK\"" = "National Alliance",
+  "LTS-Lithuanian Nationalist and Republican Union" = "Lithuanian Nationalist and Republican Union",
+  "Liberals-Lithuanian Freedom Union" = "Lithuanian Freedom Union",
+  "PiS-Law and Justice" = "Law and Justice",
+  "RN National movement" = "National Movement",
+  "Confederation Liberty and Independence" = "Confederation Freedom and Independence",
+  "SP United Poland" = "United Poland",
+  "KNP Congress of the new right" = "Congress of the New Right",
+  "CH-Basta!" = "Enough",
+  "PRM-Greater Rumania Party" = "Greater Romania Party",
+  "People's Party Our Slovakia" = "Kotlebists – People’s Party Our Slovakia",
+  "New Slovenia+Slovenian People's Party" = "New Slovenia – Christian Democrats",
+  "New Slovenia" = "New Slovenia – Christian Democrats",
+  "Vox" = "Voice"
+)
+
+# Apply the mappings to the party column
+election_data_european_level_noFlag <- election_data_european_level_noFlag %>%
+  mutate(party = recode(party, !!!party_mappings))
+
+# Create the flag_far_right column in the election_data dataframe
+election_data_european_level <- election_data_european_level_noFlag %>%
+  left_join(the_popuList_3_farRight %>%
+              select(party_name_english, farright), 
+            by = c("party" = "party_name_english")) %>%
+  mutate(flag_far_right = ifelse(is.na(farright), 0, 1)) %>%
+  select(-farright)
+
+# Manually adjust flag to 1 for obvious wrong classifications (was not included in popuList_3_farRight)
+election_data_european_level <- election_data_european_level %>%
+  mutate(flag_far_right = case_when(
+    party %in% c("National Democratic Party", "Identity Ireland", "Renua Ireland") ~ 1, TRUE ~ flag_far_right))
+
+# Filter for parties that are classified far right
+election_data_european_level_far_right <- election_data_european_level %>%
+  filter(flag_far_right == 1)
+
+# Split between countries on National constituency only and countries with more granualar levels as aggregation logic differs
+
+election_data_european_level_far_right_national_constituency_countries <- election_data_european_level_far_right %>%
+  filter(constituency == "National")
+
+election_data_european_level_far_right_more_granular_countries <- election_data_european_level_far_right %>%
+  filter(constituency != "National")
+
+
+# Group per conutry, year and constituency (to aggregate within subregions of acountry, e.g. to total Belgium French / Dutch / German instead of seperate party rows for each region)
+election_data_european_level_far_right_aggregated_more_granular_countries <- election_data_european_level_far_right_more_granular_countries %>%
+  group_by(country, year, constituency) %>%
+  summarize(
+    seats = sum(seats, na.rm = TRUE),
+    votes = sum(votes, na.rm = TRUE),
+    seats_total = first(seats_total),  # As seats_total is cons. within each group
+    votes_valid = first(votes_valid)   # As votes_valid is cons. within each group
+  )
+
+# Group again per conutry and year (to aggregate per country and year only, e.g. to total Belgium only instead of Belgium French / Dutch / German)
+election_data_european_level_far_right_aggregated_more_granular_countries <- election_data_european_level_far_right_aggregated_more_granular_countries %>%
+  group_by(year, country) %>%
+  summarize(
+    seats = sum(seats, na.rm = TRUE),
+    votes = sum(votes, na.rm = TRUE),
+    seats_total = sum(seats_total, na.rm = TRUE),  # As seats_total is cons. within each group
+    votes_valid = sum(votes_valid, na.rm = TRUE)   # As votes_valid is cons. within each group
+  )
+
+# Recalcualte votes share based on aggregated values
+election_data_european_level_far_right_aggregated_more_granular_countries <- election_data_european_level_far_right_aggregated_more_granular_countries %>%
+  mutate(votes_share = (votes / votes_valid) * 100)
+
+# Group per conutry, year and constituency (to aggregate within subregions of acountry, e.g. to total Belgium French / Dutch / German instead of seperate party rows for each region)
+election_data_european_level_far_right_aggregated <- election_data_european_level_far_right_national_constituency_countries %>%
+  group_by(country, year, constituency) %>%
+  summarize(
+    seats = sum(seats, na.rm = TRUE),
+    votes = sum(votes, na.rm = TRUE),
+    seats_total = first(seats_total),  # As seats_total is cons. within each group
+    votes_valid = first(votes_valid)   # As votes_valid is cons. within each group
+  )
+
+# Recalcualte votes share based on aggregated values
+election_data_european_level_far_right_aggregated <- election_data_european_level_far_right_aggregated %>%
+  mutate(votes_share = (votes / votes_valid)*100)
+
+# Merge both seperate aggregated dataframes back together
+election_data_european_level_far_right_aggregated <- rbind(election_data_european_level_far_right_aggregated,election_data_european_level_far_right_aggregated_more_granular_countries)
+
+# Drop now irrelevant constituency
+election_data_european_level_far_right_aggregated <- election_data_european_level_far_right_aggregated %>% select(-constituency)
+```
+
+```{r, eval=TRUE, echo=FALSE, fig.align='center', class.output="centered-plot"}
+# Rename Czech Republic for join with SHP_27
+election_data_european_level_far_right_aggregated <- election_data_european_level_far_right_aggregated %>%
+  mutate(country = ifelse(country == "Czech Republic", "Czechia", country))
+
+# Join data with SHP_27
+election_data_european_level_far_right_aggregated_geo <- election_data_european_level_far_right_aggregated %>% 
+  left_join(SHP_27, by = c("country" = "name"))
+
+election_data_european_level_far_right_aggregated_geo <- st_as_sf(election_data_european_level_far_right_aggregated_geo)
+
+# Filter the data for the years 2014 and 2019
+election_data_2014 <- election_data_european_level_far_right_aggregated_geo %>%
+  filter(year == 2014)
+
+election_data_2019 <- election_data_european_level_far_right_aggregated_geo %>%
+  filter(year == 2019)
+
+# Create the 2019 plot
+ggplot(election_data_2019) +
+  geom_sf(aes(fill = votes_share)) +
+  scale_fill_gradient(
+    name = "Far-right votes %",
+    low = "white",
+    high = "darkblue",
+    limits = c(0, 70),  
+    breaks = seq(0, 70, by = 10)
+  ) +
+  scale_x_continuous(limits = c(-10, 35)) +
+  scale_y_continuous(limits = c(35, 69)) +
+  theme_void() +
+  ggtitle("Far-right vote % in the European Elections of 2019")
+```
+
+Taking a closer look at the results of the 2014 and 2019 elections, it becomes evident that the share of far-right voters varies significantly across different European countries. While some countries experienced an increase in far-right voter share in 2019 compared to 2014, others saw a decrease (compare bar plots underneath).
+
+```{r, eval=TRUE, echo=FALSE, fig.align='center', class.output="centered-plot"}
+suppressMessages({
+# Calculate the total votes and total valid votes for Europe
+total_votes_2014 <- sum(election_data_2014$votes, na.rm = TRUE)
+total_votes_valid_2014 <- sum(election_data_2014$votes_valid, na.rm = TRUE)
+
+# Calculate the overall vote share for Europe
+votes_share_europe_2014 <- (total_votes_2014 / total_votes_valid_2014) * 100
+
+# Calculate the total votes and total valid votes for Europe
+total_votes_2019 <- sum(election_data_2019$votes, na.rm = TRUE)
+total_votes_valid_2019 <- sum(election_data_2019$votes_valid, na.rm = TRUE)
+
+# Calculate the overall vote share for Europe
+votes_share_europe_2019 <- (total_votes_2019 / total_votes_valid_2019) * 100
+
+# Split the dataframe into 2014 and 2019 subsets
+election_data <- st_drop_geometry(election_data_european_level_far_right_aggregated_geo)
+
+df2014 <- election_data %>%
+  filter(year == 2014) %>%
+  select(country, votes_share) %>%
+  rename(votes_share_2014 = votes_share)
+
+df2019 <- election_data %>%
+  filter(year == 2019) %>%
+  select(country, votes_share) %>%
+  rename(votes_share_2019 = votes_share)
+
+# Join the two subsets on 'country'
+df_combined <- df2019 %>%
+  left_join(df2014, by = "country")
+
+# Calculate the delta_to_2014
+df_result <- df_combined %>%
+  mutate(delta_to_2014 = votes_share_2019 - votes_share_2014)
+
+# Sort the dataframe by vote_share in ascending order
+df_sorted <- df_result %>%
+  arrange(votes_share_2019)
+
+# Determine a midpoint to split the data into two separate dataframes
+midpoint <- ceiling(nrow(df_sorted) / 2)
+df_part1 <- df_sorted[1:midpoint, ]
+df_part2 <- df_sorted[(midpoint + 1):nrow(df_result), ]
+
+# Create a function to format the delta values
+format_delta <- function(delta) {
+  if (is.na(delta)) {
+    return(NA)
+  } else if (delta > 0) {
+    return(sprintf("+%.2f", delta))
+  } else {
+    return(sprintf("%.2f", delta))
+  }
+}
+
+# Apply the function to both parts
+df_part1 <- df_part1 %>%
+  mutate(delta_formatted = sapply(delta_to_2014, format_delta))
+
+df_part2 <- df_part2 %>%
+  mutate(delta_formatted = sapply(delta_to_2014, format_delta))
+
+# Remove rows with missing values
+df_part1 <- df_part1 %>% drop_na()
+df_part2 <- df_part2 %>% drop_na()
+
+})
+
+# Create the first bar plot
+ggplot(df_part1, aes(x = reorder(country, votes_share_2019), y = votes_share_2019)) +
+  geom_bar(stat = "identity", fill = "grey", width = 0.5) +
+  geom_text(aes(label = round(votes_share_2019, 2)), vjust = 0.5, color = "black", size = 4) +
+  geom_text(aes(label = delta_formatted), vjust = -2, color = "red", size = 4) +
+  labs(title = "Share of far-right votes in 2019 (compared to 2014)",
+       x = "Country",
+       y = "Vote Share (%)",
+       caption = "Red numbers indicate the change in vote share from 2014.") +
+  theme_light() +
+  ylim(0, 20) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+        plot.title = element_text(size = 14),
+        plot.caption = element_text(size = 10))
+
+# Create the second bar plot
+ggplot(df_part2, aes(x = reorder(country, votes_share_2019), y = votes_share_2019)) +
+  geom_bar(stat = "identity", fill = "grey", width = 0.5) +
+  geom_text(aes(label = round(votes_share_2019, 2)), vjust = 3, color = "black", size = 4) +
+  geom_text(aes(label = delta_formatted), vjust = -2, color = "red", size = 4) +
+  labs(title = "Share of far-right votes in 2019 (compared to 2014)",
+       x = "Country",
+       y = "Vote Share (%)",
+       caption = "Red numbers indicate the change in vote share from 2014.") +
+  ylim(0, 70) +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+        plot.title = element_text(size = 14),
+        plot.caption = element_text(size = 10))
+```
+
+At the total European level, `r format(votes_share_europe_2019, nsmal=2,digits=4)` % of all votes have been given to far-right parties in 2019 (compared to `r format(votes_share_europe_2014, nsmal=2,digits=4)` % in 2014, an increase by factor 1,3).
+
+If we now zoom in on Germany (see map below), it becomes clear that the share of far-right votes also varies significantly across regions, with a range of up to 20% between the lowest and highest values.
+
+The north-east, corresponding to the area of the former East Germany (or German Democratic Republic), generally shows a stronger inclination towards far-right parties compared to the rest of the country. States in this area on average at least doubled their share of far-right votes in 2019 compared to 2014 (see Bar plot underneath for actual values).
+
+In the south-west, Baden-Württemberg, one of Germany's largest and economically crucial states, has the highest share of far-right votes in the region.
+
+```{r, eval= TRUE, echo=FALSE, fig.align='center', class.output="centered-plot"}
+election_data_german_level <- read_csv(here::here("data/election_data_german_level.csv"),,show_col_types = FALSE)
+
+# Adjust current party name of AFD in election_data_german_level to one version only
+party_mappings <- c(
+  "AfD" = "AFD"
+)
+# Apply the mapping to the party column
+election_data_german_level <- election_data_german_level %>%
+  mutate(party = recode(party, !!!party_mappings))
+
+election_data_german_level <- election_data_german_level %>%
+  mutate(area_no = case_when(
+    area_no == 901 ~ 1,
+    area_no == 902 ~ 2,
+    area_no == 903 ~ 3,
+    area_no == 904 ~ 4,
+    area_no == 905 ~ 5,
+    area_no == 906 ~ 6,
+    area_no == 907 ~ 7,
+    area_no == 908 ~ 8,
+    area_no == 909 ~ 9,
+    area_no == 910 ~ 10,
+    area_no == 911 ~ 11,
+    area_no == 912 ~ 12,
+    area_no == 913 ~ 13,
+    area_no == 914 ~ 14,
+    area_no == 915 ~ 15,
+    area_no == 916 ~ 16,
+    TRUE ~ area_no
+  ))
+
+# Manually adjust flag to 1 for obvious wrong classifications (was not included in popuList_3_farRight)
+# List of far-right parties
+far_right_parties <- c("REP", "AFD", "AfD", "PRO NRW", "NPD", 
+                       "DER DRITTE WEG", "DIE RECHTE – Partei für Volksabstimmung, Souveränität und Heimatschutz")
+
+# Create the new column 'far_right_flag'
+election_data_german_level$flag_far_right <- ifelse(election_data_german_level$party %in% far_right_parties, 1, 0)
+
+# Filter for parties that are classified far right
+election_data_german_level_far_right <- election_data_german_level %>%
+  filter(flag_far_right == 1)
+
+# Filter for entries on federal state level 
+election_data_german_level_far_right_state <- election_data_german_level_far_right %>%
+  filter(area_no<17)
+
+# Group per area over all parties
+election_data_german_level_far_right_state_aggregated <- election_data_german_level_far_right_state %>%
+  group_by(year, area) %>%
+  summarize(
+    votes = sum(votes, na.rm = TRUE),
+    valid_votes = first(valid_votes)   # As votes_valid is cons. within each group
+  )
+
+# Recalculate votes share based on aggregated values
+election_data_german_level_far_right_state_aggregated <- election_data_german_level_far_right_state_aggregated %>%
+  mutate(votes_share = (votes / valid_votes)*100)
+
+# Join data with SHP_GER
+election_data_german_level_far_right_state_aggregated_geo <- election_data_german_level_far_right_state_aggregated %>% 
+  left_join(SHP_GER, by = c("area" = "NAME_1"))
+
+election_data_german_level_far_right_state_aggregated_geo <- st_as_sf(election_data_german_level_far_right_state_aggregated_geo)
+
+# Filter the data for the years 2014 and 2019
+election_data_germany_2014 <- election_data_german_level_far_right_state_aggregated_geo %>%
+  filter(year == 2014)
+
+election_data_germany_2019 <- election_data_german_level_far_right_state_aggregated_geo %>%
+  filter(year == 2019)
+
+
+# Create the 2019 plot
+ggplot(election_data_germany_2019) +
+  geom_sf(aes(fill = votes_share)) +
+  scale_fill_gradient(
+    name = "Far-right votes %",
+    low = "white",
+    high = "darkblue",
+    limits = c(0, 30),  
+    breaks = seq(0, 30, by = 5)
+  ) +
+  scale_x_continuous(limits = c(3, 15)) +
+  scale_y_continuous(limits = c(47, 55)) +
+  theme_void() +
+  ggtitle("Far-right vote % in the European Elections of 2019")
+```
+
+```{r, eval= TRUE, echo=FALSE, fig.align='center', class.output="centered-plot"}
+suppressMessages({
+# Calculate the total votes and total valid votes for Germany
+total_votes_2014 <- sum(election_data_germany_2014$votes, na.rm = TRUE)
+total_votes_valid_2014 <- sum(election_data_germany_2014$valid_votes, na.rm = TRUE)
+
+# Calculate the overall vote share for Germany
+votes_share_germany_2014 <- (total_votes_2014 / total_votes_valid_2014) * 100
+
+# Calculate the total votes and total valid votes for Germany
+total_votes_2019 <- sum(election_data_germany_2019$votes, na.rm = TRUE)
+total_votes_valid_2019 <- sum(election_data_germany_2019$valid_votes, na.rm = TRUE)
+
+# Calculate the overall vote share for Germany
+votes_share_germany_2019 <- (total_votes_2019 / total_votes_valid_2019) * 100
+})
+```
+
+At the total German level, `r format(votes_share_germany_2019, nsmal=2,digits=4)` % of all votes have been given to far-right parties in 2019 (compared to `r format(votes_share_germany_2014, nsmal=2,digits=3)` % in 2014). This places Germany exactly in line with the average increase by a factor of 1.3 that Europe has experienced overall.
+
+```{r, eval= TRUE, echo=FALSE, fig.align='center', class.output="centered-plot"}
+suppressMessages({
+# Split into 2014 and 2019 subsets
+election_data <- st_drop_geometry(election_data_german_level_far_right_state_aggregated_geo)
+
+df2014 <- election_data %>%
+  filter(year == 2014) %>%
+  select(area, votes_share) %>%
+  rename(votes_share_2014 = votes_share)
+
+df2019 <- election_data %>%
+  filter(year == 2019) %>%
+  select(area, votes_share) %>%
+  rename(votes_share_2019 = votes_share)
+
+# Join the two subsets on 'area'
+df_combined <- df2019 %>%
+  left_join(df2014, by = "area")
+
+# Calculate the delta_to_2014
+df_result <- df_combined %>%
+  mutate(delta_to_2014 = votes_share_2019 - votes_share_2014)
+
+# Sort the dataframe by vote_share in ascending order
+df_sorted <- df_result %>%
+  arrange(votes_share_2019)
+
+# Determine a midpoint to split the data into two separate dataframes
+midpoint <- ceiling(nrow(df_sorted) / 2)
+df_part1 <- df_sorted[1:midpoint, ]
+df_part2 <- df_sorted[(midpoint + 1):nrow(df_result), ]
+
+# Create a function to format the delta values
+format_delta <- function(delta) {
+  if (is.na(delta)) {
+    return(NA)
+  } else if (delta > 0) {
+    return(sprintf("+%.2f", delta))
+  } else {
+    return(sprintf("%.2f", delta))
+  }
+}
+
+# Apply the function to both parts
+df_part1 <- df_part1 %>%
+  mutate(delta_formatted = sapply(delta_to_2014, format_delta))
+
+df_part2 <- df_part2 %>%
+  mutate(delta_formatted = sapply(delta_to_2014, format_delta))
+
+# Remove rows with missing values
+df_part1 <- df_part1 %>% drop_na()
+df_part2 <- df_part2 %>% drop_na()
+
+})
+
+# Create the first bar plot
+ggplot(df_part1, aes(x = reorder(area, votes_share_2019), y = votes_share_2019)) +
+  geom_bar(stat = "identity", fill = "grey", width = 0.5) +
+  geom_text(aes(label = round(votes_share_2019, 2)), vjust = 2, color = "black", size = 4) +
+  geom_text(aes(label = delta_formatted), vjust = -2, color = "red", size = 4) +
+  labs(title = "Share of far-right votes in 2019 (compared to 2014)",
+       x = "State",
+       y = "Vote Share (%)",
+       caption = "Red numbers indicate the change in vote share from 2014.") +
+  theme_light() +
+  ylim(0, 20) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+        plot.title = element_text(size = 14),
+        plot.caption = element_text(size = 10))
+
+# Create the second bar plot
+ggplot(df_part2, aes(x = reorder(area, votes_share_2019), y = votes_share_2019)) +
+  geom_bar(stat = "identity", fill = "grey", width = 0.5) +
+  geom_text(aes(label = round(votes_share_2019, 2)), vjust = 2, color = "black", size = 4) +
+  geom_text(aes(label = delta_formatted), vjust = -2, color = "red", size = 4) +
+  labs(title = "Share of far-right votes in 2019 (compared to 2014)",
+       x = "State",
+       y = "Vote Share (%)",
+       caption = "Red numbers indicate the change in vote share from 2014.") +
+  ylim(0, 70) +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+        plot.title = element_text(size = 14),
+        plot.caption = element_text(size = 10))
+```
+
+### So what?
+
+In conclusion, this deepdive on election data has confirmed two things:
+
+1.  Firstly, the 2019 European election saw an average increase in the share of far-right votes across all European countries, with an increase by a factor of 1.3. Despite this general trend, there were individual countries that experienced a decrease in far-right votes.
+
+2.  Specifically for Germany, the overall increase in far-right votes by a factor of 1.3 aligns with the broader European trend. Interestingly, within Germany, there appears to be a noticeable divide between the east and west in terms of far-right voting patterns.
+
+With the 2024 European Elections approaching quickly, this only goes to show the importance of everyone exercising their right to vote for democratic parties. Especially now, as for the first time, individuals aged 16 and older are eligible to vote!
+
+### What's really under the surface?
+
+Here, I was only able to scratch the surface, but in the future I’d like to analyse:
+
+-   Do the same regions in Germany vote far-right in federal and in European elections?
+
+-   For other countries, is there are similar regional division in far-right voter behavior to Germany?
+
+-   Is there anything special regarding demographic variables (e.g. income or age) in regions that have a higher share of far-right votes compared to regions that have lower shares?
+
+### References
+
+R-Packages:
+
+-   Lahti L, Huovari J, Kainu M, Biecek P, Hernangomez D, Antal D, Kantanen P (2023). “eurostat: Tools for Eurostat Open Data.” R package version 4.0.0, <https://github.com/rOpenGov/eurostat>.\
+    Retrieved on 29/05/2024.
+-   Wickham H, Averick M, Bryan J, Chang W, D'Agostino McGowan L, Francois R, Grolemund G, Hayes A, Henry L, Hester J, Kuhn M, Pedersen TL, Miller E, Bache SM, Muller K, Ooms J, Robinson D, Seidel DP, Spinu V, Takahashi K, Vaughan D, Wilke C, Woo K, Yutani H (2023). “tidyverse: Easily Install and Load the 'Tidyverse'.” R package version 1.3.2, <https://CRAN.R-project.org/package=tidyverse>. Retrieved on 29/05/2024.
+-   Müller K (2023). “here: A Simpler Way to Find Your Files.” R package version 1.0.1, <https://CRAN.R-project.org/package=here>. Retrieved on 29/05/2024.
+-   Wickham H, Bryan J (2023). “readxl: Read Excel Files.” R package version 1.4.2, <https://CRAN.R-project.org/package=readxl>. Retrieved on 29/05/2024.
+-   Hernangomez D (2023). “giscoR: Tools to Download GISCO Data.” R package version 0.3.0, <https://github.com/rOpenGov/giscoR>. Retrieved on 29/05/2024.
+-   Pebesma E (2023). “sf: Simple Features for R.” R package version 1.0-9, <https://CRAN.R-project.org/package=sf>. Retrieved on 29/05/2024.
+-   Pedersen TL (2023). “patchwork: The Composer of Plots.” R package version 1.1.2, <https://CRAN.R-project.org/package=patchwork>. Retrieved on 29/05/2024.
+-   Wickham H, François R, Henry L, Müller K (2023). “dplyr: A Grammar of Data Manipulation.” R package version 1.1.0, <https://CRAN.R-project.org/package=dplyr>. Retrieved on 29/05/2024.
+
+Data:
+
+-   CARAMANI, Daniele, EP election results at constituency Level (1979-2019), EUI Research Data, 2023, Robert Schuman Centre for Advanced Studies, [European Governance and Politics Programme] - <https://hdl.handle.net/1814/75475>, Retrieved from Cadmus, EUI Research Repository on 29/05/2024
+-   Rooduijn, Matthijs, Andrea L.P. Pirro, Daphne Halikiopoulou, Caterina Froio, Stijn van Kessel, Sarah L. de Lange, Cas Mudde, and Paul Taggart (2023). *The PopuList 3.0: An Overview of Populist, Far-left and Far-right Parties in Europe*. [www.popu-list.org](http://www.popu-list.org/). DOI 10.17605/OSF.IO/2EWKQ. Retrieved on 30/05/2024.
+-   Bundeswahlleiterin (2023). European Election Data 2019. <https://www.bundeswahlleiterin.de/dam/jcr/41fa4c86-f716-46b9-9e6e-8f9402110557/ew_kerg.zi>. Retrieved on 30/05/2024.
+-   University of California, Davis (2023). GADM Shapefile Data for Germany. <https://geodata.ucdavis.edu/gadm/gadm4.1/shp/gadm41_DEU_shp.zip>. Retrieved on 30/05/2024.
+
+Methods and Inspiration:
+
+-   Stavrakoudis A (2023), [University of Ioannina](http://www.econ.uoi.gr/). “Drawing Maps of Europe Using R and Eurostat Data.” Retrieved on 29/05/2024, from <http://stavrakoudis.econ.uoi.gr/r-eurostat/drawing-maps-of-europe.html>.
+-   Süddeutsche Zeitung (2024). “Fremdenfeindlichkeit, Wohlstand, Ökonomie und Rechtspopulismus auf Sylt.” Retrieved on 30/05/2024, from <https://www.sueddeutsche.de/wirtschaft/fremdenfeindlichkeit-wohlstand-oekonomie-rechtspopulismus-sylt-1.7466521?reduced=true>.
+-   The Guardian (2024). “Outrage at Footage of People Singing Nazi Slogan at Party on German Island.” Retrieved on 30/05/2024, from <https://www.theguardian.com/world/article/2024/may/24/outrage-at-footage-of-people-singing-nazi-slogan-at-party-on-german-island>.
+-   Rooduijn, Matthijs, Andrea L.P. Pirro, Daphne Halikiopoulou, Caterina Froio, Stijn van Kessel, Sarah L. de Lange, Cas Mudde, and Paul Taggart (2023). The PopuList: A Database of Populist, Far-Left, and Far-Right Parties Using Expert-Informed Qualitative Comparative Classification (EiQCC). *British Journal of Political Science*, 1–10. <https://doi.org/10.1017/S0007123423000431>. Retrieved on 30/05/2024
+
+<!-- ---------------------------------------------------------------------- -->
+
+<!-- Behind the Scenes - Task 3 Tab -->
+
+<!-- ---------------------------------------------------------------------- -->
+
+## Behind the Scenes
+
+### What's in this section
+
+#### Question 4
+
+*Tell us about a part(s) of your data processing or analysis that weren't "sexy" and wouldn't typically be included in a blog post. (e.g. Was their any data drudgery or time intensive wrangling? Were there any repetitive tasks or manual tasks? If it was easy, describe what made it easy?)*
+
+I was positively surprised by the availability of geo data through the R eurostat package and the GADM website. Reading through their documentation, it was easy to find and pull the respective levels of the geo data that I needed.
+
+However, I encountered three incredibly frustrating and time-consuming issues:
+
+1.  The Germany-specific data from Bundeswahlleiterin was very hard to find on their website. It was sheer luck that I stumbled upon the sub-directory containing it. Additionally, there was no codebook available for this data.
+
+2.  The datasets for 2014 and 2019 from Bundeswahlleiterin had different encodings. It took me two hours to experiment with various encodings when reading in the .csv files. Eventually, by chance, I opened both files in Visual Studio Code, which displayed the most likely encoding style in the lower right corner.
+
+3.  I initially thought I could easily classify parties as far-right using the PopuList dataset. However, I quickly realized that the list was updated in 2023. Some parties I needed to classify for 2014 and 2019 no longer existed (dissolved or banned), while others had undergone name changes or were simply spelled differently across the three data sources. This led to a three-hour Google search about various political parties, their past and present names, and a manual mapping of the correct names.
+
+#### Question 5
+
+*Were there any challenges that you faced in conducting this analysis. These may take the form of data limitations or coding challenges? (e.g. Was there anything in your analysis that you were not anticipating when you started? Did you have to change your intended scope?)*
+
+After transforming all my election data into a long format (instead of wide), it took me quite a while to figure out how to calculate the "delta_to_2014" values. It felt counterintuitive to split the data again and join them in a wide format. While this approach worked, I feel there might be better methods.
+
+I also didn't initially realize that the European-level election data included a mix of "national" and more granular "constituency" values for some countries. I naively aggregated over "country," "year," and "constituency" and later realized that I had either lost some data for some countries or aggregated it incorrectly. Eventually, I figured out that I needed to split the election data into countries with only "national" level data and those with more granular levels, aggregate them separately, and then bind them together.
+
+I also wanted to include an analysis of demographic variables like income. However, due to the time-consuming nature of the issues described above, I had to adjust my scope and focus on fewer questions.
+
+#### Questions 6
+
+*Tell us about any imperfect parts of your work or how would like to expand this analysis in future? (We don't expect you to solve everything in one assignment.)*
+
+I already mentioned some of the questions I would like to tackle at the end of my blog post. Additionally, incorporating data from the upcoming 2024 election would be very interesting. Overall, I would love to get more detailed. This was good practice but barely scratched the surface.
+
+I am not happy with the way I classified far-right parties. Despite my best efforts to manually find all previous and current names of parties, there is a chance that some smaller parties are not included in the analysis. It would be helpful to see whether PopuList has old versions of their dataset, which might be more accurate for the elections in 2014 and 2019.
+
+I am also not happy with the way my barcharts look. I was trying to create something more clear and visually appealing (e.g. like [this](https://d13ot9o61jdzpp.cloudfront.net/images/year_on_year_chart_with_variance.png)) but did not find a way in the time I had to create that type of plot.
+
+#### Question 7
+
+*An additional 2 marks will be awarded for the code you used to produce your analysis and report. These marks include reproducibility, compiling of your .html, production of any figures and tables etc.*
+
+This question doesn't require an answer.
