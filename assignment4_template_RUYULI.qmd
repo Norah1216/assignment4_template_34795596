@@ -138,17 +138,17 @@ Here is where you should write your blogpost! (Task 2)
 
 There is no strict structure for you to follow. However, here is a skeleton structure you may find helpful.
 
-## Motivation
+### Motivation
 
 <!-- Rubric: Data Aspects - The analysis covers multiple aspects of the data: temporal trends, regional comparisons, and visual mapping. -->
 
 The COVID-19 pandemic was an unprecedented economic and social shock that affected people’s livelihoods and well-being across the globe. This post examines how unemployment rates and life satisfaction (a measure of subjective well-being) changed from 2017 to 2023 in the four nations of the United Kingdom – England, Scotland, Wales, and Northern Ireland – focusing on the pandemic year 2020. The goal is to see how the onset of COVID-19 impacted these indicators and whether a spike in unemployment coincided with a decline in life satisfaction. This topic connects economic conditions (joblessness) with quality of life, helping us understand the human impact behind the labor market stats. By comparing trends before, during, and after 2020 across the four nations, we gain insight into each region’s resilience and vulnerabilities during this tumultuous period.
 
-## Data
+### Data
 
 We use annual ONS data (2017–2023) on two indicators: the modelled unemployment rate (percentage of the labor force unemployed) and the average life satisfaction score (mean self-reported score on a 0–10 scale). These statistics are provided for each UK country, enabling direct comparisons between England, Scotland, Wales, and Northern Ireland. Notably, the 2020 values capture the period of the first COVID-19 wave and national lockdowns, when we expect the strongest effects. This analysis was conducted in R. We used ggplot2 for the line charts and giscoR for mapping the nations, illustrating a range of data visualization approache
 
-## Analysis
+### Analysis
 
 Life Satisfaction Trends (2017–2023)
 
@@ -269,7 +269,7 @@ map_unemp_clean <- unemp_clean %>%
 ggplot(map_unemp_clean)+
 geom_sf(aes(fill=`value`,geometry = geometry), color = "white")+geom_text(aes(x = x, y = y,label = nation), size=3, fontface ="bold", color ="black") + scale_fill_gradient(low="yellow",high ="red",na.value = NA)+ylim(NA,59)+labs(title ="United Kingdom: 4 Nations",fill="Nation") + theme_void()
 ```
-## Conclusions
+### Conclusions
 
 In summary, COVID-19 had a profound impact on both unemployment and life satisfaction across the UK. Every nation saw unemployment jump and well-being fall in 2020, though the magnitude differed (England had the biggest jobless surge, Northern Ireland the smallest; Northern Ireland kept the highest life satisfaction, Wales the lowest). By 2022–2023, unemployment was back to pre-pandemic levels in all nations, but life satisfaction remained a bit lower than before – indicating a slower recovery for well-being.
 
@@ -277,7 +277,7 @@ Comparing the nations suggests that regions which minimized job losses (like Nor
 
 Finally, by examining multiple aspects of the data – time trends and geographic differences – we were able to paint a fuller picture of the pandemic’s impact. This multi-faceted approach, using a range of data skills and visualizations, helped turn raw data into an informative story about how each UK nation navigated the COVID-19 crisis.
 
-## References
+### References
 
 
 <!-- Task 3 Tab: Behind the Scenes -  -->
@@ -286,7 +286,27 @@ Finally, by examining multiple aspects of the data – time trends and geographi
 
 ### What's in this section
 
-Here is where you should tell us about your reflection on your analysis (Task 3).
+#### Question 5
 
-Again, these are the details about **your** perspective and the gritty details behind the scenes of your analysis.
+*Unglamorous data drudgery* 
+
+Much of my data processing was tedious cleanup that never made it into the blog narrative. For example, I had to manually map region codes to country names (using NUTS codes to identify “England”, “Scotland”, etc.) so that the data could be grouped by nation. I also spent time wrestling with the ONS data file format – the indicators came in a multi-sheet .ods workbook, so I had to locate the correct sheets and strip out extraneous rows (like footnotes and totals) before I could use the data. Additionally, I performed repetitive wrangling tasks like splitting combined year ranges into separate start/end year columns and converting data types. These steps were not intellectually exciting, but they were time-consuming chores necessary to get the unemployment and life satisfaction data into a usable shape for analysis.
+
+#### Question 6
+
+*Challenges faced*
+
+Challenges faced: One major challenge was dealing with gaps and quirks in the data. For instance, I discovered missing data for Northern Ireland in some series, which meant I couldn’t plot NI’s unemployment trend alongside the other countries for all years. I had to decide whether to omit NI in certain visuals or find a workaround. Another challenge was learning to use the giscoR package to obtain geographic shapefiles for mapping. I hadn’t used giscoR before, so figuring out how to fetch UK NUTS level boundaries and join them to my data took some trial and error. Handling the structure of the datadownload.ods file was also tricky – the dataset wasn’t in a straightforward CSV, and parsing the right tables from the ODS (and understanding the financial-year time labels for life satisfaction) required careful reading of documentation. These hurdles forced me to adapt on the fly, but overcoming them taught me new skills (like using a GIS package in R) and gave me a better understanding of the data’s limitations.
+
+#### Questions 7
+
+*Imperfections & improvements*
+
+
+
+#### Questions 8
+
+*Version history of the analysis*
+
+I saved four versions of my analysis to document the iterative process. Version 1 was an initial draft with messy, exploratory code and minimal commentary, and the first maps still showed England split into subregions. In Version 2, I learned how to merge England’s subregions into a single shape for mapping and cleaned up the code structure while fixing initial errors. In Version 3, I made further improvements: I added context to the life satisfaction and unemployment comparisons, refined the visualizations for clarity, and resolved remaining issues. By Version 4, I focused on polishing the report for submission—optimizing the code for reproducibility, proofreading the text for clarity, and ensuring all insights were clearly presented. All four versions have been pushed to a [GitHub repository](https://github.com/Norah1216/assignment4_template_34795596).
 :::

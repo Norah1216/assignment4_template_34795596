@@ -21,6 +21,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -76,16 +110,76 @@ ul.task-list li input[type="checkbox"] {
 <div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
 <section id="topic-of-this-work" class="level4">
 <h4 class="anchored" data-anchor-id="topic-of-this-work">Topic of this work</h4>
+<p>I aim to explore how the unemployment rate and life satisfaction have changed across the United Kingdom’s four nations (England, Scotland, Wales, and Northern Ireland) from 2017 up to 2023, and to investigate whether there is any observable relationship between these two indicators over time. In other words, the question driving this analysis is: “How have trends in unemployment and subjective well-being (life satisfaction) evolved in each UK nation from 2017–2023, and do periods of higher unemployment correspond with lower life satisfaction?” This topic was chosen because unemployment and personal well-being are both crucial measures of a society’s health – by examining them together, we can gain insights into the socio-economic impacts of events like the late 2010s economic changes, Brexit, and the COVID-19 pandemic on people’s livelihoods and well-being. It’s an area of personal interest as it combines economic and social dimensions: understanding if a rise in joblessness is mirrored by a dip in life satisfaction can highlight the human impact behind labor market statistics. Moreover, the question offers a chance to apply various data skills (from data sourcing to visualization) on real-world open data, aligning well with the assignment’s goal of turning data into information and knowledge.</p>
 </section>
 <section id="data-description" class="level4">
 <h4 class="anchored" data-anchor-id="data-description">Data description</h4>
+<p>The data selected to answer this question come from the UK Office for National Statistics (ONS), specifically an open dataset that provides a range of subnational indicators over time. This dataset is well-suited to the task because it contains both of the key variables needed – the modelled unemployment rate and the average life satisfaction score – broken down by geography and year. The data cover the period from around 2017 through 2023 and include values at the level of UK nations (as well as finer geographies). Crucially, this means we have directly comparable metrics for England, Scotland, Wales, and Northern Ireland across multiple years, allowing for trend analysis and cross-country comparisons. The dataset is part of ONS’s effort to make local-level statistics accessible; it provides annual estimates for numerous measures at national and local levels.</p>
+<p>Life satisfaction is one of the ONS’s personal well-being measures, derived from survey questions in the Annual Population Survey. Respondents are asked “Overall, how satisfied are you with your life nowadays?” on a scale from 0 (“not at all”) to 10 (“completely”). The data we use are the average life satisfaction scores (on this 0–10 scale) for each nation and year. Because these are based on large-scale sample surveys (tens of thousands of responses), they provide reliable estimates of the population’s subjective well-being over time. One advantage of using this measure is that it captures an important aspect of quality of life beyond economic indicators, and ONS has consistently collected it since 2011 as part of the national well-being program. A consideration, however, is that life satisfaction is subjective and can be influenced by many factors (health, social changes, etc.), so it isn’t a direct causal outcome of economic changes. Still, as an official statistic (now an established part of national well-being monitoring), it offers valuable insight and is appropriate for our analysis. The data are sample-based (not a full census), so there is some margin of error, especially for smaller populations. At the country level this is generally not a major limitation (the sample sizes are large), but one should be cautious about over-interpreting very small differences. All data are aggregated and anonymized, so there are no privacy concerns; the statistics are published openly under the Open Government Licence.</p>
+<p>The modelled unemployment rate is an ONS experimental statistic that estimates the unemployment percentage for local areas. It represents the proportion of the economically active population (age 16 and over) who are unemployed (without a job, actively seeking work). These model-based unemployment estimates are used because sample surveys alone (like the Labour Force Survey or Annual Population Survey) can be unreliable for small areas; the ONS improves them by incorporating additional information (for instance, claimant counts) to “model” the unemployment rate at local authority level. For our purposes, we extract the nation-level figures from this dataset (which align closely with official unemployment rates reported at country level). This indicator is suitable because it directly measures the labor market conditions we’re interested in, and it’s available annually over the period of interest. A limitation is that as a modelled estimate, it’s subject to revisions and methodological quirks (and it’s labeled “statistics in development” by ONS). However, it is the best source for consistent subnational unemployment rates and is produced by the national statistical agency, lending it credibility. We note that Northern Ireland’s data come via a slightly different route (through the NI statistics agency using a similar definition), and in earlier years small sample sizes there can lead to less precision. Overall, though, the data should be robust enough to compare broad trends.</p>
+<p>In terms of metadata: The unemployment rate is given in percentage terms (% of labor force), and life satisfaction in mean scores out of 10. The time frame for both is yearly; life satisfaction is reported by financial year (e.g.&nbsp;April–March periods labeled as 2017–18, 2018–19, etc.), while the modelled unemployment appears to be for years ending in each calendar year or similar (we will clarify in processing). Geographically, the dataset includes local authorities and higher aggregations. We will focus on the four constituent countries of the UK. All data are openly available from ONS and carry the standard caveats of official statistics. They are provided under the Open Government License, meaning we are free to use and share them in this analysis.</p>
 <p><strong>Datasets:</strong></p>
+<p>ONS Subnational Indicators Dataset – an ONS compiled data file (March 2023 edition) containing numerous local-level indicators over time. From this, we specifically used:</p>
+<p>Table 5: Modelled unemployment rate (percentage of 16+ economically active who are unemployed) for each UK nation, 2017–2023.</p>
+<p>Table 61: Average life satisfaction score (mean self-reported life satisfaction on 0–10 scale) for each UK nation, 2017–2023.</p>
+<p>Table 19: Business death rate (percent of active enterprises that closed, UK total) for years 2017–2023, used as a supplementary indicator of economic conditions.</p>
+<p>These data tables were all part of the same ONS workbook download (an OpenDocument Spreadsheet). All figures are © Crown Copyright, sourced from ONS and licensed under OGL v3.0. They provide a consistent basis for our analysis, as they share common time frames and geographic categorizations.</p>
 </section>
 <section id="data-download" class="level4">
 <h4 class="anchored" data-anchor-id="data-download">Data download</h4>
-</section>
-<section id="remember" class="level3">
-<h3 class="anchored" data-anchor-id="remember">Remember</h3>
+<p>The dataset was obtained through the <a href="https://www.ons.gov.uk/explore-local-statistics/indicators/wellbeing-satisfaction">ONS website’s local statistics interface</a>. The data for the selected indicators (modelled unemployment rate and life satisfaction) was downloaded as a multi-sheet ODS file (datadownload.ods). We identified the relevant sheets (Table 5 and Table 61) within this file to extract the needed data. After downloading, the data was read into R using the readODS package (which can import .ods spreadsheets). The data then went through a cleaning process using dplyr and janitor packages. We removed any unnecessary rows/columns (such as footnotes or totals) and used janitor::clean_names() to standardize column names (e.g., converting them to lowercase and snake_case). The period field, originally a text range (for example, a span of years), was parsed to create separate numeric columns year_start and year_end. This parsing involved extracting the starting year and ending year from the period string. Finally, we ensured the data types were appropriate (e.g., converting the value field to numeric) and that each dataset was ready for analysis. The cleaned data was then used to produce visualizations</p>
+<p>In this project, geographic boundary shapefiles were not downloaded manually, but rather accessed directly within R using the giscoR package (via gisco_get_nuts() with nuts_level = 1) to retrieve the UK’s national-level administrative boundaries (England, Scotland, Wales, and Northern Ireland). These shapefiles are publicly provided by Eurostat and licensed for free academic use.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>life_satisfaction_clean <span class="ot">&lt;-</span> <span class="fu">read_ods</span>(<span class="st">"data/datadownload.ods"</span>, <span class="at">sheet =</span> <span class="st">"61"</span>, <span class="at">skip =</span> <span class="dv">5</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">value =</span> value_score_out_of_10</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">replace_na</span>(<span class="fu">list</span>(</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">area_name =</span> <span class="st">"Unknown"</span>,        </span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">value     =</span> <span class="dv">0</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  )) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>uk_nuts1 <span class="ot">&lt;-</span> <span class="fu">gisco_get_nuts</span>(<span class="at">nuts_level =</span> <span class="dv">1</span>, <span class="at">resolution =</span> <span class="st">"03"</span>) <span class="sc">%&gt;%</span>    <span class="co">#nuts_level = 1选地区等级取</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(CNTR_CODE <span class="sc">==</span> <span class="st">"UK"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>uk_nuts1 <span class="ot">&lt;-</span> uk_nuts1 <span class="sc">%&gt;%</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nation =</span> <span class="fu">case_when</span>(</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">grepl</span>(<span class="st">"^UKM"</span>, NUTS_ID) <span class="sc">~</span> <span class="st">"Scotland"</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">grepl</span>(<span class="st">"^UKN"</span>, NUTS_ID) <span class="sc">~</span> <span class="st">"Northern Ireland"</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">grepl</span>(<span class="st">"^UKL"</span>, NUTS_ID) <span class="sc">~</span> <span class="st">"Wales"</span>,  <span class="co"># UKL includes Wales</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"England"</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span> </span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">NUTS_NAME =</span> <span class="fu">str_remove_all</span>(NUTS_NAME, <span class="st">" </span><span class="sc">\\</span><span class="st">(ENGLAND</span><span class="sc">\\</span><span class="st">)"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>unemp_clean <span class="ot">&lt;-</span> <span class="fu">read_ods</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"data/datadownload.ods"</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">sheet =</span> <span class="st">"5"</span>,  </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">skip  =</span> <span class="dv">5</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>() <span class="sc">%&gt;%</span>  </span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">value    =</span> value_percent</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">between</span>(</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">as.integer</span>(<span class="fu">str_sub</span>(period, <span class="dv">1</span>, <span class="dv">4</span>)),  </span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>      <span class="dv">2017</span>, <span class="dv">2023</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">start_date =</span> <span class="fu">str_extract</span>(period, <span class="st">"^[^/]+"</span>) <span class="sc">%&gt;%</span> <span class="fu">as_date</span>(),</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">year_start =</span> <span class="fu">year</span>(start_date),</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">year_end   =</span> year_start <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    area_code,</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    area_name,</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    year_start,</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    year_end,</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    value)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <p>Contains public sector information licensed under the Open Government Licence v3.0. © Crown copyright 2017-2022, Office for National Statistics.</p>
 <p><a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/"><img src="/ogl-symbol-41px-retina-black.png" alt="Open Government Licence logo"></a></p>
 <!-- Task 2 Tab: Writing your blogpost -->
@@ -99,26 +193,182 @@ ul.task-list li input[type="checkbox"] {
 <section id="blogpost-structure" class="level3">
 <h3 class="anchored" data-anchor-id="blogpost-structure">Blogpost Structure</h3>
 <p>There is no strict structure for you to follow. However, here is a skeleton structure you may find helpful.</p>
-<ol type="1">
-<li>Title (is set at the top of this document)</li>
-<li>Motivation<br>
-</li>
-<li>Data<br>
-</li>
-<li>Analysis<br>
-</li>
-<li>Conclusions<br>
-</li>
-<li>References</li>
-</ol>
+</section>
+<section id="motivation" class="level3">
+<h3 class="anchored" data-anchor-id="motivation">Motivation</h3>
+<!-- Rubric: Data Aspects - The analysis covers multiple aspects of the data: temporal trends, regional comparisons, and visual mapping. -->
+<p>The COVID-19 pandemic was an unprecedented economic and social shock that affected people’s livelihoods and well-being across the globe. This post examines how unemployment rates and life satisfaction (a measure of subjective well-being) changed from 2017 to 2023 in the four nations of the United Kingdom – England, Scotland, Wales, and Northern Ireland – focusing on the pandemic year 2020. The goal is to see how the onset of COVID-19 impacted these indicators and whether a spike in unemployment coincided with a decline in life satisfaction. This topic connects economic conditions (joblessness) with quality of life, helping us understand the human impact behind the labor market stats. By comparing trends before, during, and after 2020 across the four nations, we gain insight into each region’s resilience and vulnerabilities during this tumultuous period.</p>
+</section>
+<section id="data" class="level3">
+<h3 class="anchored" data-anchor-id="data">Data</h3>
+<p>We use annual ONS data (2017–2023) on two indicators: the modelled unemployment rate (percentage of the labor force unemployed) and the average life satisfaction score (mean self-reported score on a 0–10 scale). These statistics are provided for each UK country, enabling direct comparisons between England, Scotland, Wales, and Northern Ireland. Notably, the 2020 values capture the period of the first COVID-19 wave and national lockdowns, when we expect the strongest effects. This analysis was conducted in R. We used ggplot2 for the line charts and giscoR for mapping the nations, illustrating a range of data visualization approache</p>
+</section>
+<section id="analysis" class="level3">
+<h3 class="anchored" data-anchor-id="analysis">Analysis</h3>
+<p>Life Satisfaction Trends (2017–2023)</p>
+<p>Life satisfaction in the UK’s nations was relatively stable from 2017 to 2019, with only small year-to-year changes. In 2020, however, all four nations saw a drop to their lowest life satisfaction levels in the period (see <span class="citation" data-cites="Figure1">@Figure1</span>). For example, England’s average score fell from around 7.7 (pre-pandemic) to 7.4 in 2020, and Wales dropped from roughly 7.4 to 7.0. This dip in well-being reflects the widespread impact of the pandemic on daily life beyond just job losses (e.g.&nbsp;health anxieties, isolation).</p>
+<p>There are also persistent differences between nations. Throughout 2017–2023, Northern Ireland reported the highest life satisfaction (e.g.&nbsp;around 7.8 in 2019) and Wales the lowest (around 7.0 at its 2020 low), with England and Scotland in between. The 2020 map of life satisfaction (<span class="citation" data-cites="Figure2">@Figure2</span>) highlights this: Northern Ireland appears highest and Wales lowest in that year. Yet despite these baseline differences, the 2020 decline hit all nations – underscoring that COVID-19’s negative effect on well-being was broad-based rather than localized.</p>
+<p>After 2020, life satisfaction partially recovered. Scores improved in 2021–2022 as social restrictions eased, but by 2023 they still generally remained slightly below their pre-pandemic highs. In other words, well-being didn’t fully rebound even when the immediate crisis passed.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>life_satisfaction_clean2 <span class="ot">&lt;-</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>life_satisfaction_clean <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"England"</span>, <span class="st">"Scotland"</span>, <span class="st">"Wales"</span>, <span class="st">"Northern Ireland"</span>), </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">between</span>(<span class="fu">as.integer</span>(<span class="fu">str_sub</span>(period, <span class="dv">1</span>, <span class="dv">4</span>)), <span class="dv">2017</span>, <span class="dv">2023</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">separate</span>(period, <span class="at">into =</span> <span class="fu">c</span>(<span class="st">"year_start"</span>, <span class="st">"year_end"</span>), <span class="at">sep =</span> <span class="st">"-"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year_start =</span> <span class="fu">as.integer</span>(year_start))</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(life_satisfaction_clean2, <span class="fu">aes</span>(<span class="at">x =</span> year_start, <span class="at">y =</span> value)) <span class="sc">+</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">size =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">"#2C3E50"</span>) <span class="sc">+</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>, <span class="at">color =</span> <span class="st">"#E74C3C"</span>) <span class="sc">+</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> area_name, <span class="at">ncol =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="dv">2017</span><span class="sc">:</span><span class="dv">2023</span>) <span class="sc">+</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">x     =</span> <span class="st">"Start Year"</span>,</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">y     =</span> <span class="st">"Life Satisfaction (0–10)"</span>,</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Life Satisfaction Trends by UK Nation, 2017–2023"</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">12</span>) <span class="sc">+</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">strip.text      =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="dv">12</span>),</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text.x     =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>),</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title      =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="dv">14</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>)</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assignment4_template_RUYULI_files/figure-html/figure1-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Life Satisfaction Trends by UK Nation, 2017–2023</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>map_life <span class="ot">&lt;-</span> life_satisfaction_clean <span class="sc">%&gt;%</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(period <span class="sc">==</span> <span class="st">"2020-2021"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="st">`</span><span class="at">area_name</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">toupper</span>(<span class="st">`</span><span class="at">area_name</span><span class="st">`</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>( <span class="st">`</span><span class="at">area_name</span><span class="st">`</span> <span class="sc">%in%</span> uk_nuts1<span class="sc">$</span>NUTS_NAME) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(uk_nuts1, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"area_name"</span> <span class="ot">=</span> <span class="st">"NUTS_NAME"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">centroid =</span> <span class="fu">st_centroid</span>(geometry)) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">st_coordinates</span>(centroid)[, <span class="dv">1</span>],</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="fu">st_coordinates</span>(centroid)[, <span class="dv">2</span>]</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">NAME_LATN =</span> <span class="fu">str_remove_all</span>(NAME_LATN, <span class="st">" </span><span class="sc">\\</span><span class="st">(ENGLAND</span><span class="sc">\\</span><span class="st">)"</span>))</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(map_life)<span class="sc">+</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill=</span><span class="st">`</span><span class="at">value</span><span class="st">`</span>,<span class="at">geometry =</span> geometry), <span class="at">color =</span> <span class="st">"white"</span>)<span class="sc">+</span><span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y,<span class="at">label =</span> nation), <span class="at">size=</span><span class="dv">3</span>, <span class="at">fontface =</span><span class="st">"bold"</span>, <span class="at">color =</span><span class="st">"black"</span>) <span class="sc">+</span> <span class="fu">scale_fill_gradient</span>(<span class="at">low=</span><span class="st">"yellow"</span>,<span class="at">high =</span><span class="st">"red"</span>,<span class="at">na.value =</span> <span class="cn">NA</span>)<span class="sc">+</span><span class="fu">ylim</span>(<span class="cn">NA</span>,<span class="dv">59</span>)<span class="sc">+</span><span class="fu">labs</span>(<span class="at">title =</span><span class="st">"United Kingdom: 4 Nations"</span>,<span class="at">fill=</span><span class="st">"Nation"</span>) <span class="sc">+</span> <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assignment4_template_RUYULI_files/figure-html/figure2-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>United Kingdom: 4 Nations</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Unemployment Trends (2017–2023)</p>
+<p>In 2017–2019, unemployment rates in all nations were low (~3–4%) and even drifting downward thanks to a strong labor market. 2020 saw a sharp spike as the pandemic triggered an economic shutdown (see <span class="citation" data-cites="Figure3">@Figure3</span>). For example, England’s unemployment rate jumped from about 4% in 2019 to over 5% in 2020. Scotland and Wales each rose by roughly 1 percentage point as well. Northern Ireland was a notable exception – its rate increased only slightly (from ~2.5% to ~3%), thanks in part to different industry structures and government support (Northern Ireland actually hit a record low unemployment around mid-2020).</p>
+<p>The unemployment map for 2020 (<span class="citation" data-cites="Figure4">@Figure4</span>) shows the highest jobless rates in England and the lowest in Northern Ireland, with Scotland and Wales in between. This snapshot highlights that economic pain was uneven: England’s more urban economy was hit harder (some regions neared 6% unemployment) while Northern Ireland saw a much milder impact.</p>
+<p>After 2020, as economies reopened, unemployment quickly fell. By 2022 all four nations were back around 3–4% (multi-decade lows in some cases), reflecting a robust recovery aided by job-support policies. There was only a slight uptick by 2023 as conditions stabilized, leaving unemployment rates still very low by historical standards.</p>
+<p>Connecting Unemployment and Well-Being</p>
+<p>Viewed side by side, there is a clear inverse relationship between these indicators: when unemployment spiked in 2020, life satisfaction plunged. This is no surprise – job losses and economic uncertainty take a toll on well-being – and the data show 2020 as a pivotal turning point for both metrics across all nations. Notably, nations that fared better on one measure also did better on the other: for instance, Northern Ireland’s relatively low unemployment corresponded with its higher life satisfaction, whereas Wales experienced both higher unemployment and lower well-being.</p>
+<p>However, the link is not perfectly one-to-one or instantaneous. By 2022, unemployment had fully recovered, but life satisfaction did not return to its earlier peak. Clearly, factors beyond employment (such as health and mental health impacts) continued to affect people’s life satisfaction even after they went back to work. In other words, economic recovery alone isn’t enough to restore overall happiness levels – a reminder that public well-being may need direct support (e.g.&nbsp;mental health services, community rebuilding) alongside economic measures.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>line_unemp_clean <span class="ot">&lt;-</span>unemp_clean <span class="sc">%&gt;%</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"England"</span>, <span class="st">"Scotland"</span>, <span class="st">"Wales"</span>, <span class="st">"Northern Ireland"</span>))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(line_unemp_clean, <span class="fu">aes</span>(</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> year_start, </span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> value, </span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> area_name, </span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">group =</span> area_name</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="dv">2017</span><span class="sc">:</span><span class="dv">2023</span>) <span class="sc">+</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">x     =</span> <span class="st">"Start Year"</span>,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">y     =</span> <span class="st">"Modelled Unemployment Rate (%)"</span>,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"Nation"</span>,</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Modelled Unemployment Rate by UK Nation, 2017–2023"</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title    =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="dv">14</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>),</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text.x   =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>, <span class="at">vjust =</span> <span class="dv">1</span>),</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"bottom"</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>  ) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assignment4_template_RUYULI_files/figure-html/figure3-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Modelled Unemployment Rate by UK Nation, 2017–2023</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>map_unemp_clean <span class="ot">&lt;-</span> unemp_clean <span class="sc">%&gt;%</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year_start <span class="sc">==</span> <span class="st">"2020"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="st">`</span><span class="at">area_name</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">toupper</span>(<span class="st">`</span><span class="at">area_name</span><span class="st">`</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>( <span class="st">`</span><span class="at">area_name</span><span class="st">`</span> <span class="sc">%in%</span> uk_nuts1<span class="sc">$</span>NUTS_NAME) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(uk_nuts1, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"area_name"</span> <span class="ot">=</span> <span class="st">"NUTS_NAME"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">centroid =</span> <span class="fu">st_centroid</span>(geometry)) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">st_coordinates</span>(centroid)[, <span class="dv">1</span>],</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="fu">st_coordinates</span>(centroid)[, <span class="dv">2</span>]</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">NAME_LATN =</span> <span class="fu">str_remove_all</span>(NAME_LATN, <span class="st">" </span><span class="sc">\\</span><span class="st">(ENGLAND</span><span class="sc">\\</span><span class="st">)"</span>))</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(map_unemp_clean)<span class="sc">+</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill=</span><span class="st">`</span><span class="at">value</span><span class="st">`</span>,<span class="at">geometry =</span> geometry), <span class="at">color =</span> <span class="st">"white"</span>)<span class="sc">+</span><span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y,<span class="at">label =</span> nation), <span class="at">size=</span><span class="dv">3</span>, <span class="at">fontface =</span><span class="st">"bold"</span>, <span class="at">color =</span><span class="st">"black"</span>) <span class="sc">+</span> <span class="fu">scale_fill_gradient</span>(<span class="at">low=</span><span class="st">"yellow"</span>,<span class="at">high =</span><span class="st">"red"</span>,<span class="at">na.value =</span> <span class="cn">NA</span>)<span class="sc">+</span><span class="fu">ylim</span>(<span class="cn">NA</span>,<span class="dv">59</span>)<span class="sc">+</span><span class="fu">labs</span>(<span class="at">title =</span><span class="st">"United Kingdom: 4 Nations"</span>,<span class="at">fill=</span><span class="st">"Nation"</span>) <span class="sc">+</span> <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assignment4_template_RUYULI_files/figure-html/figure4-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>United Kingdom: 4 Nations</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="conclusions" class="level3">
+<h3 class="anchored" data-anchor-id="conclusions">Conclusions</h3>
+<p>In summary, COVID-19 had a profound impact on both unemployment and life satisfaction across the UK. Every nation saw unemployment jump and well-being fall in 2020, though the magnitude differed (England had the biggest jobless surge, Northern Ireland the smallest; Northern Ireland kept the highest life satisfaction, Wales the lowest). By 2022–2023, unemployment was back to pre-pandemic levels in all nations, but life satisfaction remained a bit lower than before – indicating a slower recovery for well-being.</p>
+<p>Comparing the nations suggests that regions which minimized job losses (like Northern Ireland) saw smaller dips in life satisfaction, while those hit harder economically (like parts of England and Wales) suffered larger well-being declines. This underlines the tight interplay between economic health and social health: jobs and financial stability matter for happiness, but they aren’t the whole story. A truly full recovery from a shock like COVID-19 requires addressing not just the economy but also people’s mental and social well-being.</p>
+<p>Finally, by examining multiple aspects of the data – time trends and geographic differences – we were able to paint a fuller picture of the pandemic’s impact. This multi-faceted approach, using a range of data skills and visualizations, helped turn raw data into an informative story about how each UK nation navigated the COVID-19 crisis.</p>
+</section>
+<section id="references" class="level3">
+<h3 class="anchored" data-anchor-id="references">References</h3>
 <!-- Task 3 Tab: Behind the Scenes -  -->
 </section>
 </div>
 <div id="tabset-1-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-3-tab">
 <section id="whats-in-this-section-1" class="level3">
 <h3 class="anchored" data-anchor-id="whats-in-this-section-1">What’s in this section</h3>
-<p>Here is where you should tell us about your reflection on your analysis (Task 3).</p>
-<p>Again, these are the details about <strong>your</strong> perspective and the gritty details behind the scenes of your analysis.</p>
+<section id="question-5" class="level4">
+<h4 class="anchored" data-anchor-id="question-5">Question 5</h4>
+<p><em>Unglamorous data drudgery</em></p>
+<p>Much of my data processing was tedious cleanup that never made it into the blog narrative. For example, I had to manually map region codes to country names (using NUTS codes to identify “England”, “Scotland”, etc.) so that the data could be grouped by nation. I also spent time wrestling with the ONS data file format – the indicators came in a multi-sheet .ods workbook, so I had to locate the correct sheets and strip out extraneous rows (like footnotes and totals) before I could use the data. Additionally, I performed repetitive wrangling tasks like splitting combined year ranges into separate start/end year columns and converting data types. These steps were not intellectually exciting, but they were time-consuming chores necessary to get the unemployment and life satisfaction data into a usable shape for analysis.</p>
+</section>
+<section id="question-6" class="level4">
+<h4 class="anchored" data-anchor-id="question-6">Question 6</h4>
+<p><em>Challenges faced</em></p>
+<p>Challenges faced: One major challenge was dealing with gaps and quirks in the data. For instance, I discovered missing data for Northern Ireland in some series, which meant I couldn’t plot NI’s unemployment trend alongside the other countries for all years. I had to decide whether to omit NI in certain visuals or find a workaround. Another challenge was learning to use the giscoR package to obtain geographic shapefiles for mapping. I hadn’t used giscoR before, so figuring out how to fetch UK NUTS level boundaries and join them to my data took some trial and error. Handling the structure of the datadownload.ods file was also tricky – the dataset wasn’t in a straightforward CSV, and parsing the right tables from the ODS (and understanding the financial-year time labels for life satisfaction) required careful reading of documentation. These hurdles forced me to adapt on the fly, but overcoming them taught me new skills (like using a GIS package in R) and gave me a better understanding of the data’s limitations.</p>
+</section>
+<section id="questions-7" class="level4">
+<h4 class="anchored" data-anchor-id="questions-7">Questions 7</h4>
+<p><em>Imperfections &amp; improvements</em></p>
+</section>
+<section id="questions-8" class="level4">
+<h4 class="anchored" data-anchor-id="questions-8">Questions 8</h4>
+<p><em>Version history of the analysis</em></p>
+<p>I saved four versions of my analysis to document the iterative process. Version 1 was an initial draft with messy, exploratory code and minimal commentary, and the first maps still showed England split into subregions. In Version 2, I learned how to merge England’s subregions into a single shape for mapping and cleaned up the code structure while fixing initial errors. In Version 3, I made further improvements: I added context to the life satisfaction and unemployment comparisons, refined the visualizations for clarity, and resolved remaining issues. By Version 4, I focused on polishing the report for submission—optimizing the code for reproducibility, proofreading the text for clarity, and ensuring all insights were clearly presented. All four versions have been pushed to a <a href="https://github.com/Norah1216/assignment4_template_34795596">GitHub repository</a>.</p>
+</section>
 </section>
 </div>
 </div>
