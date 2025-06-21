@@ -1,5 +1,5 @@
 ---
-title: "What is your blogpost title? Add it here??"
+title: " COVID-19's Impact on Unemployment and Life Satisfaction in the UK"
 subtitle: "Assignment 4 ETC5512"
 author: "RUYU LI"
 format: html
@@ -37,6 +37,24 @@ Table 19: Business death rate (percent of active enterprises that closed, UK tot
 
 These data tables were all part of the same ONS workbook download (an OpenDocument Spreadsheet). All figures are © Crown Copyright, sourced from ONS and licensed under OGL v3.0. They provide a consistent basis for our analysis, as they share common time frames and geographic categorizations.
 
+giscoR R Package:
+
+Source: Geographic Information System of the Commission (GISCO) – Eurostat
+
+Content: Tools for downloading and using GISCO (Geographic Information System of the Commission) spatial data (global and European maps) in R
+
+Last Updated: January 2025
+
+Data Type: Open data, primarily shapefiles and spatial metadata
+
+Limitations: Data accuracy and availability are dependent on Eurostat; not officially related to or endorsed by Eurostat
+
+Privacy/Ethics: Data is publicly available and does not involve personal identifiers
+
+License: GPL-3
+
+For more detailed information about the datasets, refer to the accompanying README and data dictionary.
+
 #### Data download
 
 The dataset was obtained through the [ONS website’s local statistics interface](https://www.ons.gov.uk/explore-local-statistics/indicators/wellbeing-satisfaction). The data for the selected indicators (modelled unemployment rate and life satisfaction) was downloaded as a multi-sheet ODS file (datadownload.ods). We identified the relevant sheets (Table 5 and Table 61) within this file to extract the needed data. After downloading, the data was read into R using the readODS package (which can import .ods spreadsheets). The data then went through a cleaning process using dplyr and janitor packages. We removed any unnecessary rows/columns (such as footnotes or totals) and used janitor::clean_names() to standardize column names (e.g., converting them to lowercase and snake_case). The period field, originally a text range (for example, a span of years), was parsed to create separate numeric columns year_start and year_end. This parsing involved extracting the starting year and ending year from the period string. Finally, we ensured the data types were appropriate (e.g., converting the value field to numeric) and that each dataset was ready for analysis. The cleaned data was then used to produce visualizations
@@ -66,6 +84,8 @@ library(sf)
 ```
 
 ```{r}
+# Load and clean life satisfaction data from the ODS file:
+
 life_satisfaction_clean <- read_ods("data/datadownload.ods", sheet = "61", skip = 5) %>%
   clean_names() %>%
   rename(
@@ -78,7 +98,9 @@ life_satisfaction_clean <- read_ods("data/datadownload.ods", sheet = "61", skip 
 ```
 
 ```{r}
-uk_nuts1 <- gisco_get_nuts(nuts_level = 1, resolution = "03") %>%    #nuts_level = 1选地区等级取
+# Retrieve NUTS level 1 geographic boundaries for the UK and label nations:
+
+uk_nuts1 <- gisco_get_nuts(nuts_level = 1, resolution = "03") %>%   
   filter(CNTR_CODE == "UK")
 
 uk_nuts1 <- uk_nuts1 %>%
@@ -90,10 +112,11 @@ uk_nuts1 <- uk_nuts1 %>%
   )) %>% 
   mutate(NUTS_NAME = str_remove_all(NUTS_NAME, " \\(ENGLAND\\)"))
 
-
 ```
 
 ```{r}
+# Load and clean modelled unemployment rate data from the ODS file:
+
 unemp_clean <- read_ods(
     "data/datadownload.ods",
     sheet = "5",  
@@ -122,25 +145,13 @@ unemp_clean <- read_ods(
 
 ```
 
-Contains public sector information licensed under the Open Government Licence v3.0. © Crown copyright 2017-2022, Office for National Statistics.
-
-<a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/"><img src="/ogl-symbol-41px-retina-black.png" alt="Open Government Licence logo"/></a>
+Contains public sector information licensed under the Open Government Licence v3.0. © Crown copyright 2017-2023, Office for National Statistics.
 
 <!-- Task 2 Tab: Writing your blogpost -->
 
 ## Blog post
 
-### What's in this section
-
-Here is where you should write your blogpost! (Task 2)
-
-### Blogpost Structure
-
-There is no strict structure for you to follow. However, here is a skeleton structure you may find helpful.
-
 ### Motivation
-
-<!-- Rubric: Data Aspects - The analysis covers multiple aspects of the data: temporal trends, regional comparisons, and visual mapping. -->
 
 The COVID-19 pandemic was an unprecedented economic and social shock that affected people’s livelihoods and well-being across the globe. This post examines how unemployment rates and life satisfaction (a measure of subjective well-being) changed from 2017 to 2023 in the four nations of the United Kingdom – England, Scotland, Wales, and Northern Ireland – focusing on the pandemic year 2020. The goal is to see how the onset of COVID-19 impacted these indicators and whether a spike in unemployment coincided with a decline in life satisfaction. This topic connects economic conditions (joblessness) with quality of life, helping us understand the human impact behind the labor market stats. By comparing trends before, during, and after 2020 across the four nations, we gain insight into each region’s resilience and vulnerabilities during this tumultuous period.
 
@@ -152,15 +163,18 @@ We use annual ONS data (2017–2023) on two indicators: the modelled unemploymen
 
 Life Satisfaction Trends (2017–2023)
 
-Life satisfaction in the UK’s nations was relatively stable from 2017 to 2019, with only small year-to-year changes. In 2020, however, all four nations saw a drop to their lowest life satisfaction levels in the period (see @Figure1). For example, England’s average score fell from around 7.7 (pre-pandemic) to 7.4 in 2020, and Wales dropped from roughly 7.4 to 7.0. This dip in well-being reflects the widespread impact of the pandemic on daily life beyond just job losses (e.g. health anxieties, isolation).
+Life satisfaction in the UK’s nations was relatively stable from 2017 to 2019, with only small year-to-year changes. In 2020, however, all four nations saw a drop to their lowest life satisfaction levels in the period (see @fig-Figure1). For example, England’s average score fell from around 7.7 (pre-pandemic) to 7.4 in 2020, and Wales dropped from roughly 7.4 to 7.0. This dip in well-being reflects the widespread impact of the pandemic on daily life beyond just job losses (e.g. health anxieties, isolation).
 
-There are also persistent differences between nations. Throughout 2017–2023, Northern Ireland reported the highest life satisfaction (e.g. around 7.8 in 2019) and Wales the lowest (around 7.0 at its 2020 low), with England and Scotland in between. The 2020 map of life satisfaction (@Figure2) highlights this: Northern Ireland appears highest and Wales lowest in that year. Yet despite these baseline differences, the 2020 decline hit all nations – underscoring that COVID-19’s negative effect on well-being was broad-based rather than localized.
+There are also persistent differences between nations. Throughout 2017–2023, Northern Ireland reported the highest life satisfaction (e.g. around 7.8 in 2019) and Wales the lowest (around 7.0 at its 2020 low), with England and Scotland in between. The 2020 map of life satisfaction (@fig-Figure2) highlights this: Northern Ireland appears highest and Wales lowest in that year. Yet despite these baseline differences, the 2020 decline hit all nations – underscoring that COVID-19’s negative effect on well-being was broad-based rather than localized.
 
 After 2020, life satisfaction partially recovered. Scores improved in 2021–2022 as social restrictions eased, but by 2023 they still generally remained slightly below their pre-pandemic highs. In other words, well-being didn’t fully rebound even when the immediate crisis passed.
 
-```{r message=FALSE, warning=FALSE}
-#| label: figure1
+```{r fig-life-line, echo=FALSE, message=FALSE, warning=FALSE}
+#| label: fig-Figure1
 #| fig-cap: "Life Satisfaction Trends by UK Nation, 2017–2023"
+
+# Prepare and plot life satisfaction trends (2017–2023) for each UK nation:
+
 life_satisfaction_clean2 <-
 life_satisfaction_clean %>%
   filter(
@@ -182,15 +196,18 @@ ggplot(life_satisfaction_clean2, aes(x = year_start, y = value)) +
   ) +
   theme_minimal(base_size = 12) +
   theme(
-    strip.text      = element_text(face = "bold", size = 12),
-    axis.text.x     = element_text(angle = 45, hjust = 1),
-    plot.title      = element_text(face = "bold", size = 14, hjust = 0.5)
+    strip.text  = element_text(face  = "bold", size = 12),
+    axis.text.x = element_text(angle = 45, hjust    = 1),
+    plot.title  = element_text(face  = "bold", size = 14, hjust = 0.5)
   )
 ```
 
-```{r}
-#| label: figure2
-#| fig-cap: "United Kingdom: 4 Nations"
+```{r fig-life-line, echo=FALSE, message=FALSE, warning=FALSE}
+#| label: fig-Figure2
+#| fig-cap: "Life Satisfaction Map"
+
+# Create a map of life satisfaction in 2020 for UK nations:
+
 map_life <- life_satisfaction_clean %>% 
   filter(period == "2020-2021") %>% 
   mutate(`area_name` = toupper(`area_name`)) %>% 
@@ -203,15 +220,24 @@ map_life <- life_satisfaction_clean %>%
   ) %>% 
   mutate(NAME_LATN = str_remove_all(NAME_LATN, " \\(ENGLAND\\)"))
 
-
 ggplot(map_life)+
-geom_sf(aes(fill=`value`,geometry = geometry), color = "white")+geom_text(aes(x = x, y = y,label = nation), size=3, fontface ="bold", color ="black") + scale_fill_gradient(low="yellow",high ="red",na.value = NA)+ylim(NA,59)+labs(title ="United Kingdom: 4 Nations",fill="Nation") + theme_void()
+geom_sf(aes(fill=`value`,geometry = geometry), 
+        color = "white")+
+  geom_text(aes(x = x, y = y,label = nation), size=3, 
+            fontface ="bold", color ="black") + 
+  scale_fill_gradient(low="yellow",
+                      high ="red",na.value = NA) + 
+  ylim(NA,59) + labs(
+   title    = "Geographic Variation in Life Satisfaction Across UK Nations",     
+   subtitle = "Average Life Satisfaction Scores in 2020",                      
+   fill     = "Life Satisfaction (0–10)")  + 
+  theme_void()
 ```
 Unemployment Trends (2017–2023)
 
-In 2017–2019, unemployment rates in all nations were low (\~3–4%) and even drifting downward thanks to a strong labor market. 2020 saw a sharp spike as the pandemic triggered an economic shutdown (see @Figure3). For example, England’s unemployment rate jumped from about 4% in 2019 to over 5% in 2020. Scotland and Wales each rose by roughly 1 percentage point as well. Northern Ireland was a notable exception – its rate increased only slightly (from \~2.5% to \~3%), thanks in part to different industry structures and government support (Northern Ireland actually hit a record low unemployment around mid-2020).
+In 2017–2019, unemployment rates in all nations were low (\~3–4%) and even drifting downward thanks to a strong labor market. 2020 saw a sharp spike as the pandemic triggered an economic shutdown (see @fig-Figure3). For example, England’s unemployment rate jumped from about 4% in 2019 to over 5% in 2020. Scotland and Wales each rose by roughly 1 percentage point as well. Northern Ireland was a notable exception – its rate increased only slightly (from \~2.5% to \~3%), thanks in part to different industry structures and government support (Northern Ireland actually hit a record low unemployment around mid-2020).
 
-The unemployment map for 2020 (@Figure4) shows the highest jobless rates in England and the lowest in Northern Ireland, with Scotland and Wales in between. This snapshot highlights that economic pain was uneven: England’s more urban economy was hit harder (some regions neared 6% unemployment) while Northern Ireland saw a much milder impact.
+The unemployment map for 2020 (@fig-Figure4) shows the highest jobless rates in England and the lowest in Northern Ireland, with Scotland and Wales in between. This snapshot highlights that economic pain was uneven: England’s more urban economy was hit harder (some regions neared 6% unemployment) while Northern Ireland saw a much milder impact.
 
 After 2020, as economies reopened, unemployment quickly fell. By 2022 all four nations were back around 3–4% (multi-decade lows in some cases), reflecting a robust recovery aided by job-support policies. There was only a slight uptick by 2023 as conditions stabilized, leaving unemployment rates still very low by historical standards.
 
@@ -221,9 +247,11 @@ Viewed side by side, there is a clear inverse relationship between these indicat
 
 However, the link is not perfectly one-to-one or instantaneous. By 2022, unemployment had fully recovered, but life satisfaction did not return to its earlier peak. Clearly, factors beyond employment (such as health and mental health impacts) continued to affect people’s life satisfaction even after they went back to work. In other words, economic recovery alone isn’t enough to restore overall happiness levels – a reminder that public well-being may need direct support (e.g. mental health services, community rebuilding) alongside economic measures.
 
-```{r}
-#| label: figure3
+```{r fig-life-line, echo=FALSE, message=FALSE, warning=FALSE}
+#| label: fig-Figure3
 #| fig-cap: "Modelled Unemployment Rate by UK Nation, 2017–2023"
+
+# Prepare and plot unemployment rate trends (2017–2023) for each UK nation:
 line_unemp_clean <-unemp_clean %>%
   filter(
     area_name %in% c("England", "Scotland", "Wales", "Northern Ireland"))
@@ -244,15 +272,17 @@ ggplot(line_unemp_clean, aes(
   ) +
   theme_minimal() +
   theme(
-    plot.title    = element_text(face = "bold", size = 14, hjust = 0.5),
-    axis.text.x   = element_text(angle = 45, hjust = 1, vjust = 1),
+    plot.title      = element_text(face  = "bold", size = 14, hjust = 0.5),
+    axis.text.x     = element_text(angle = 45, hjust = 1, vjust = 1),
     legend.position = "bottom"
   ) 
 ```
 
-```{r}
-#| label: figure4
-#| fig-cap: "United Kingdom: 4 Nations"
+```{r fig-life-line, echo=FALSE, message=FALSE, warning=FALSE}
+#| label: fig-Figure4
+#| fig-cap: "Unemployment Rate Map"
+
+# Create a map of the modelled unemployment rate in 2020 for UK nations:
 map_unemp_clean <- unemp_clean %>% 
   filter(year_start == "2020") %>% 
   mutate(`area_name` = toupper(`area_name`)) %>% 
@@ -267,7 +297,17 @@ map_unemp_clean <- unemp_clean %>%
 
 
 ggplot(map_unemp_clean)+
-geom_sf(aes(fill=`value`,geometry = geometry), color = "white")+geom_text(aes(x = x, y = y,label = nation), size=3, fontface ="bold", color ="black") + scale_fill_gradient(low="yellow",high ="red",na.value = NA)+ylim(NA,59)+labs(title ="United Kingdom: 4 Nations",fill="Nation") + theme_void()
+geom_sf(aes(fill=`value`,geometry = geometry), 
+        color = "white")+
+  geom_text(aes(x = x, y = y,label = nation), 
+            size=3, fontface ="bold", color ="black") +
+  scale_fill_gradient(low="yellow",high ="red",
+                      na.value = NA)+ylim(NA,59) + 
+  labs(
+   title    = "Geographic Variation in Modelled Unemployment Rate Across UK Nations",  
+   subtitle = "Modelled Unemployment Rate in 2020",                                   
+   fill     = "Unemployment Rate (%)"
+)+ theme_void()
 ```
 ### Conclusions
 
@@ -278,6 +318,32 @@ Comparing the nations suggests that regions which minimized job losses (like Nor
 Finally, by examining multiple aspects of the data – time trends and geographic differences – we were able to paint a fuller picture of the pandemic’s impact. This multi-faceted approach, using a range of data skills and visualizations, helped turn raw data into an informative story about how each UK nation navigated the COVID-19 crisis.
 
 ### References
+
+Hernangómez D (2025). _giscoR: Download Map Data from GISCO API -
+ Eurostat_. doi:10.32614/CRAN.package.giscoR
+  <https://doi.org/10.32614/CRAN.package.giscoR>,
+  <https://ropengov.github.io/giscoR/>.
+
+Wickham H, François R, Henry L, Müller K, Vaughan D (2023). _dplyr: A
+  Grammar of Data Manipulation_. R package version 1.1.4,
+  <https://CRAN.R-project.org/package=dplyr>.
+  
+
+Schutten G, Chan C, Brohan P, Steuer D, Leeper T (2025). _readODS: Read and Write ODS Files_. R package version 2.3.2,
+  <https://CRAN.R-project.org/package=readODS>.
+
+
+H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York, 2016.
+
+Wickham H, Averick M, Bryan J, Chang W, McGowan LD, François R, Grolemund G, Hayes A, Henry L, Hester J, Kuhn M, Pedersen TL, Miller E, Bache SM, Müller K, Ooms
+  J, Robinson D, Seidel DP, Spinu V, Takahashi K, Vaughan D, Wilke C, Woo K, Yutani H (2019). “Welcome to the tidyverse.” _Journal of Open Source Software_,
+  *4*(43), 1686. doi:10.21105/joss.01686 <https://doi.org/10.21105/joss.01686>.
+
+Wickham H (2023). _stringr: Simple, Consistent Wrappers for Common String Operations_. R package version 1.5.1, <https://CRAN.R-project.org/package=stringr>.
+
+Firke S (2024). _janitor: Simple Tools for Examining and Cleaning Dirty Data_. R package version 2.2.1, <https://CRAN.R-project.org/package=janitor>.
+
+Pebesma, E., & Bivand, R. (2023). Spatial Data Science: With Applications in R. Chapman and Hall/CRC. https://doi.org/10.1201/9780429459016
 
 
 <!-- Task 3 Tab: Behind the Scenes -  -->
@@ -302,11 +368,14 @@ Challenges faced: One major challenge was dealing with gaps and quirks in the da
 
 *Imperfections & improvements*
 
-
+I acknowledge several limitations in my analysis.Firstly, data completeness was an issue: unemployment data for Northern Ireland was missing, leaving a gap in the analysis. Secondly, the scope of indicators was narrow. I only examined unemployment and life satisfaction, whereas the pandemic’s impact is multifaceted. In future work, it would be valuable to include other COVID-related indicators to paint a more holistic picture. Another limitation lies in the data source itself: the ONS figures I used are not from a full census but rather from sample-based estimates and surveys. This means there is some uncertainty and sampling error in the numbers (e.g. life satisfaction is self-reported via surveys, and unemployment rates are modelled estimates), so we must be careful not to over-interpret small changes. Finally, due to time and scope, my analysis was mostly descriptive – an improvement would be to perform deeper statistical modeling (for example, correlating unemployment spikes with drops in well-being, or controlling for other factors) to strengthen the insights. Despite these imperfections, being aware of them clarifies how the project could be enhanced moving forward.
 
 #### Questions 8
 
 *Version history of the analysis*
 
 I saved four versions of my analysis to document the iterative process. Version 1 was an initial draft with messy, exploratory code and minimal commentary, and the first maps still showed England split into subregions. In Version 2, I learned how to merge England’s subregions into a single shape for mapping and cleaned up the code structure while fixing initial errors. In Version 3, I made further improvements: I added context to the life satisfaction and unemployment comparisons, refined the visualizations for clarity, and resolved remaining issues. By Version 4, I focused on polishing the report for submission—optimizing the code for reproducibility, proofreading the text for clarity, and ensuring all insights were clearly presented. All four versions have been pushed to a [GitHub repository](https://github.com/Norah1216/assignment4_template_34795596).
+
+I declare that I did not use AI technology in the completion of this assignment.
+
 :::

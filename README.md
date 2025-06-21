@@ -14,13 +14,14 @@ Tables Used:
 Table 5: Modelled unemployment rate (percentage) for years 2017–2023
 Table 61: Average life satisfaction score (scale 0–10) for years 2017–2023
 
-Data Characteristics: These indicators are derived from sample surveys (not a full census). The unemployment rates are modelled estimates from survey data, and life satisfaction scores come from a well-being survey. As such, values are estimates subject to sampling variability (they are not exact counts). In this project, geographic boundary shapefiles were not downloaded manually, but rather accessed directly within R using the `giscoR` package (via `gisco_get_nuts()` with `nuts_level = 1`) to retrieve the UK’s national-level administrative boundaries (England, Scotland, Wales, and Northern Ireland). These shapefiles are publicly provided by Eurostat and licensed for free academic use.
-
+Data Characteristics: These indicators are derived from ONS’s regularly published sample-based data and modelled estimates. 
 License: All data is published under the Open Government Licence v3.0 (OGL), allowing free use with attribution.
 
 Contains public sector information licensed under the Open Government Licence v3.0. © Crown copyright 2017-2022, Office for National Statistics.
 
 <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/"><img src="/ogl-symbol-41px-retina-black.png" alt="Open Government Licence logo"/></a>
+
+Additionally, spatial data used for mapping was retrieved using the **giscoR** R package. This package provides access to Geographic Information System of the Commission (GISCO) datasets maintained by Eurostat. The data is open and publicly available, and the package is licensed under **GPL-3**. For more details, see: https://ropengov.github.io/giscoR/
 
 ## File Structure of This Dataset
 
